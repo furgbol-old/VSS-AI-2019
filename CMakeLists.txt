@@ -10,7 +10,11 @@ include_directories("${CMAKE_SOURCE_DIR}/include"
                     ${Boost_INCLUDE_DIRS})
 
 set(SRCS
-    "src/geometry/vector_2d.cc")
+    "src/geometry/vector_2d.cc"
+    "src/geometry/field_line.cc"
+    "src/io/serial_sender.cc"
+    "src/world_model/robot.cc"
+    "src/world_model/world_model.cc")
 
 add_library(${PROJECT_NAME}_SRCS
             ${SRCS})

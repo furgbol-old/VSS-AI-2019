@@ -1,0 +1,5 @@
+
+{
+    "port_name": "/dev/ttyUSB0",
+    "sending_frequency": 200
+}
