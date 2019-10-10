@@ -12,11 +12,16 @@
 namespace vss_furgbol {
 namespace io {
 
-SerialSender::SerialSender() : io_service_(), port_(io_service_), buffer_(buf_.data()) {}
+SerialSender::SerialSender() : io_service_(), port_(io_service_), buffer_(buf_.data()),
+    mutex_() {}
 
 SerialSender::SerialSender(bool *running, bool *paused, bool *status_changed, std::queue<std::vector<uint8_t>> gk_sending_queue, std::queue<std::vector<uint8_t>> cb_sending_queue, std::queue<std::vector<uint8_t>> st_sending_queue)
     : io_service_(), port_(io_service_), buffer_(buf_.data()), running_(running), paused_(paused),
-    which_queue_(GK), status_changed_(status_changed) {}
+    which_queue_(GK), status_changed_(status_changed), mutex_() {}
+
+SerialSender::SerialSender(bool *running, bool *paused, bool *status_changed) : 
+    io_service_(), port_(io_service_), buffer_(buf_.data()), running_(running), paused_(paused),
+    mutex_(), status_changed_(status_changed) {}
 
 SerialSender::~SerialSender() {}
 
@@ -53,7 +58,7 @@ void SerialSender::exec() {
                 std::cout << "[STATUS]: System working." << std::endl;
                 *status_changed_ = true;
             }
-            send(which_queue_);
+            //send(which_queue_);
             which_queue_++;
             if (which_queue_ > ST) which_queue_ = GK;
         }

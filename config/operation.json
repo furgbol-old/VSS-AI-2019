@@ -1,0 +1,40 @@
+{
+    "max_queue_size": 10,
+
+    "velocity_gain": 30,
+
+    "robots": {
+        "goalkeeper": {
+            "id": 0,
+            "max_velocity": 0,
+            "max_ball_distance": 0,
+            "field_line": {
+                "x": 0,
+                "min_y": 0,
+                "max_y": 0
+            }
+        },
+
+        "centerback": {
+            "id": 1,
+            "max_velocity": 0,
+            "max_ball_distance": 0,
+            "field_line": {
+                "x": 0,
+                "min_y": 0,
+                "max_y": 0
+            }
+        },
+
+        "striker": {
+            "id": 2,
+            "max_velocity": 0,
+            "max_ball_distance": 0,
+            "field_line": {
+                "x": 0,
+                "min_y": 0,
+                "max_y": 0
+            }
+        }
+    }
+}

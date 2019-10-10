@@ -1,1 +1,0 @@
-// ® Copyright FURGBot 2019

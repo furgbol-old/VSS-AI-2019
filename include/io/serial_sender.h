@@ -50,6 +50,7 @@ class SerialSender {
     public:
         SerialSender();
         SerialSender(bool *running, bool *paused, bool *status_changed, std::queue<std::vector<uint8_t>> gk_sending_queue, std::queue<std::vector<uint8_t>> cb_sending_queue, std::queue<std::vector<uint8_t>> st_sending_queue);
+        SerialSender(bool *running, bool *paused, bool *status_changed);
         ~SerialSender();
 
         void init();

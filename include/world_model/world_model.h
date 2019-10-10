@@ -10,7 +10,6 @@
 #include "Domain/Ball.h"
 
 #include <vector>
-#include <mutex>
 
 
 namespace vss_furgbol {
@@ -24,8 +23,6 @@ class WorldModel {
 
         vss::Ball ball_;
         std::vector<std::vector<Robot>> robots_;
-
-        void init();
 };
 
 } // namespace worl_model

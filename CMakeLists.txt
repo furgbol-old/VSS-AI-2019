@@ -13,6 +13,10 @@ set(SRCS
     "src/geometry/vector_2d.cc"
     "src/geometry/field_line.cc"
     "src/io/serial_sender.cc"
+    "src/operation/gk_operation.cc"
+    "src/operation/cb_operation.cc"
+    "src/operation/st_operation.cc"
+    "src/system/system.cc"
     "src/world_model/robot.cc"
     "src/world_model/world_model.cc")
 
