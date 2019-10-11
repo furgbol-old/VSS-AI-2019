@@ -22,6 +22,7 @@ namespace system {
 class System {
     private:
         int team_color_;
+        int execution_mode_;
         bool configured_;
 
         world_model::WorldModel *world_model_;
@@ -48,6 +49,7 @@ class System {
         std::thread tcp_thread_;
         std::mutex tcp_mutex_;
         bool tcp_is_running_;
+        bool tcp_is_paused_;
         bool tcp_status_changed_;
         
         io::SerialSender *serial_sender_;

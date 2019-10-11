@@ -7,6 +7,10 @@
 
 namespace vss_furgbol {
 
+enum ExecutionModeLabels {
+    REAL, SIMULATION
+};
+
 enum RoleLabels {
     GK, CB, ST //GoalKeeper, CenterBack, STriker
 };

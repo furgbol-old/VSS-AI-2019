@@ -23,6 +23,8 @@ class SerialSender {
         boost::asio::streambuf::const_buffers_type buffer_;
         boost::asio::serial_port port_;
 
+        int mode_;
+
         std::string port_name_;
         int frequency_;
         float period_;
@@ -47,8 +49,7 @@ class SerialSender {
 
     public:
         SerialSender();
-        SerialSender(bool *running, bool *paused, bool *status_changed, std::queue<std::vector<uint8_t>> gk_sending_queue, std::queue<std::vector<uint8_t>> cb_sending_queue, std::queue<std::vector<uint8_t>> st_sending_queue);
-        SerialSender(bool *running, bool *paused, bool *status_changed);
+        SerialSender(int execution_mode, bool *running, bool *paused, bool *status_changed, std::queue<std::vector<uint8_t>> gk_sending_queue, std::queue<std::vector<uint8_t>> cb_sending_queue, std::queue<std::vector<uint8_t>> st_sending_queue);
         ~SerialSender();
 
         void init();

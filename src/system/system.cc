@@ -28,13 +28,24 @@ void System::init() {
 
     if (json_file["team_color"] == "blue") team_color_ = BLUE;
     else if (json_file["team_color"] == "yellow") team_color_ = YELLOW;
-    else configured_ = false;
+    else {
+        std::cout << "[SYSTEM ERROR]: Unknown team color." << std::endl;
+        configured_ = false;
+    }
+
+    if (json_file["execution_mode"] == "real") execution_mode_ = REAL;
+    else if (json_file["execution_mode"] == "simulation") execution_mode_ = SIMULATION;
+    else {
+        std::cout << "[SYSTEM ERROR]: Unknown execution mode." << std::endl;
+        configured_ = false;
+    }
 
     if (configured_) {
         std::cout << "[STATUS]: System configuration done!" << std::endl;
 
         std::cout << "-> Configurations:" << std::endl;
         std::cout << "Team color: " << std::string(json_file["team_color"]) << std::endl;
+        std::cout << "Execution mode: " << std::string(json_file["execution_mode"]) << std::endl;
         std::cout << std::endl;
 
         gk_is_running_ = true;
@@ -56,15 +67,17 @@ void System::init() {
         while (!st_status_changed_);
 
         tcp_is_running_ = true;
+        tcp_is_paused_ = true;
         tcp_status_changed_ = false;
-        tcp_receiver_ = new io::TCPReceiver(world_model_, &tcp_is_running_, &tcp_status_changed_);
+        tcp_receiver_ = new io::TCPReceiver(world_model_, &tcp_is_running_, &tcp_is_paused_, &tcp_status_changed_);
         tcp_thread_ = std::thread(&io::TCPReceiver::init, tcp_receiver_);
         while (!tcp_status_changed_);
+        if (!tcp_is_running_) tcp_thread_.join();
 
         serial_is_running_ = true;
         serial_is_paused_ = true;
         serial_status_changed_ = false;
-        serial_sender_ = new io::SerialSender(&serial_is_running_, &serial_is_paused_, &serial_status_changed_, gk_operator_->getSendingQueue(), cb_operator_->getSendingQueue(), st_operator_->getSendingQueue());
+        serial_sender_ = new io::SerialSender(execution_mode_, &serial_is_running_, &serial_is_paused_, &serial_status_changed_, gk_operator_->getSendingQueue(), cb_operator_->getSendingQueue(), st_operator_->getSendingQueue());
         serial_thread_ = std::thread(&io::SerialSender::init, serial_sender_);
         while (!serial_status_changed_);
         if (!serial_is_running_) serial_thread_.join();
@@ -83,7 +96,9 @@ void System::exec() {
     do {
         std::cout << std::endl << std::endl << "\t------[MENU]------" << std::endl;
         std::cout << "[1] - Start system" << std::endl;
-        std::cout << "[2] - Pause system" << std::endl;
+        std::cout << "[2] - Start vision" << std::endl;
+        std::cout << "[3] - Pause system" << std::endl;
+        std::cout << "[4] - Pause vision" << std::endl;
         std::cout << "[0] - Close system" << std::endl;
         std::cout << "\t-> ";
         std::cin >> option;
@@ -103,6 +118,18 @@ void System::exec() {
                     }
                     while (!serial_status_changed_);
                     serial_thread_.join();
+                }
+                if (tcp_is_running_) {
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_status_changed_ = false;
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_is_running_ = false;
+                    }
+                    while (!tcp_status_changed_);
+                    tcp_thread_.join();
                 }
                 {
                     std::lock_guard<std::mutex> lock(gk_mutex_);
@@ -131,15 +158,6 @@ void System::exec() {
                     st_is_running_ = false;
                 }
                 while (!st_status_changed_);
-                {
-                    std::lock_guard<std::mutex> lock(tcp_mutex_);
-                    tcp_status_changed_ = false;
-                }
-                {
-                    std::lock_guard<std::mutex> lock(tcp_mutex_);
-                    tcp_is_running_ = false;
-                }
-                while (!tcp_status_changed_);
                 end();
                 break;
             case 1:
@@ -178,6 +196,41 @@ void System::exec() {
                 }
                 break;
             case 2:
+                if (!tcp_is_running_) {
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_is_running_ = true;
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_is_paused_ = false;
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_status_changed_ = false;
+                    }
+                    tcp_thread_ = std::thread(&io::TCPReceiver::init, tcp_receiver_);
+                    while (!tcp_status_changed_);
+                    if (!tcp_is_running_) {
+                        tcp_thread_.join();
+                        {
+                            std::lock_guard<std::mutex> lock(tcp_mutex_);
+                            tcp_is_paused_ = true;
+                        }
+                    }
+                } else if (tcp_is_paused_) {
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_status_changed_ = false;
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_is_paused_ = false;
+                    }
+                    while (!tcp_status_changed_);
+                }
+                break;
+            case 3:
                 if (!serial_is_paused_) {
                     {
                         std::lock_guard<std::mutex> lock(serial_mutex_);
@@ -188,6 +241,19 @@ void System::exec() {
                         serial_is_paused_ = true;
                     }
                     while (!serial_status_changed_);
+                }
+                break;
+            case 4:
+                if (!tcp_is_paused_) {
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_status_changed_ = false;
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(tcp_mutex_);
+                        tcp_is_paused_ = true;
+                    }
+                    while (!tcp_status_changed_);
                 }
                 break;
             default:

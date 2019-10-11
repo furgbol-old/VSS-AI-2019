@@ -1,3 +1,4 @@
 {
-    "team_color": "blue"
+    "team_color": "blue",
+    "execution_mode": "simulation"
 }

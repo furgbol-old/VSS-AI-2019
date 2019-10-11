@@ -15,22 +15,27 @@ namespace io {
 SerialSender::SerialSender() : io_service_(), port_(io_service_), buffer_(buf_.data()),
     mutex_() {}
 
-SerialSender::SerialSender(bool *running, bool *paused, bool *status_changed, std::queue<std::vector<uint8_t>> gk_sending_queue, std::queue<std::vector<uint8_t>> cb_sending_queue, std::queue<std::vector<uint8_t>> st_sending_queue)
+SerialSender::SerialSender(int execution_mode, bool *running, bool *paused, bool *status_changed, std::queue<std::vector<uint8_t>> gk_sending_queue, std::queue<std::vector<uint8_t>> cb_sending_queue, std::queue<std::vector<uint8_t>> st_sending_queue)
     : io_service_(), port_(io_service_), buffer_(buf_.data()), running_(running), paused_(paused),
-    which_queue_(GK), status_changed_(status_changed), mutex_() {}
+    which_queue_(GK), status_changed_(status_changed), mutex_(), mode_(execution_mode) {}
 
 SerialSender::~SerialSender() {}
 
 void SerialSender::init() {
     setConfigurations();
 
-    try {
-        port_.open(port_name_);
-        port_.set_option(boost::asio::serial_port_base::baud_rate(115200));
-        port_.set_option(boost::asio::serial_port_base::character_size(8));
-    } catch (boost::system::system_error error) {
-        std::cout << "[SERIAL COMMUNICATOR ERROR]: " << error.what() << std::endl << std::endl;
-        *running_ = false;
+    if (mode_ == REAL) {
+        try {
+            port_.open(port_name_);
+            port_.set_option(boost::asio::serial_port_base::baud_rate(115200));
+            port_.set_option(boost::asio::serial_port_base::character_size(8));
+        } catch (boost::system::system_error error) {
+            std::cout << "[SERIAL COMMUNICATOR ERROR]: " << error.what() << std::endl;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                *running_ = false;
+            }
+        }
     }
 
     if (*running_) printConfigurations();
@@ -51,22 +56,31 @@ void SerialSender::exec() {
         while ((*running_) && (!*paused_)) {
             if (previous_status != *paused_) {
                 previous_status = *paused_;
-                std::cout << "[STATUS]: System working." << std::endl;
-                *status_changed_ = true;
+                std::cout << "[STATUS]: Serial working." << std::endl;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *status_changed_ = true;
+                }
             }
-            //send(which_queue_);
+            send(which_queue_);
             which_queue_++;
             if (which_queue_ > ST) which_queue_ = GK;
         }
 
         if ((*paused_) && (previous_status != *paused_)) {
             std::cout << "[STATUS]: System paused." << std::endl;
-            *status_changed_ = true;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                *status_changed_ = true;
+            }
         }
 
         if (!*running_) {
             end();
-            *status_changed_ = true;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                *status_changed_ = true;
+            }
             break;
         }
     }
