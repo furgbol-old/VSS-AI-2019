@@ -28,6 +28,7 @@ class Robot : public vss::Robot {
 
         //operators
         void operator=(Robot robot);
+        void operator=(vss::Robot robot);
 };
 
 } // namespace world_model

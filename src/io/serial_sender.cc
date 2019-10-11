@@ -19,10 +19,6 @@ SerialSender::SerialSender(bool *running, bool *paused, bool *status_changed, st
     : io_service_(), port_(io_service_), buffer_(buf_.data()), running_(running), paused_(paused),
     which_queue_(GK), status_changed_(status_changed), mutex_() {}
 
-SerialSender::SerialSender(bool *running, bool *paused, bool *status_changed) : 
-    io_service_(), port_(io_service_), buffer_(buf_.data()), running_(running), paused_(paused),
-    mutex_(), status_changed_(status_changed) {}
-
 SerialSender::~SerialSender() {}
 
 void SerialSender::init() {
@@ -82,7 +78,7 @@ void SerialSender::end() {
 }
 
 void SerialSender::setConfigurations() {
-    std::cout << "[STATUS]: Configuring serial..." << std::endl;
+    std::cout << std::endl << "[STATUS]: Configuring serial..." << std::endl;
     std::ifstream _ifstream("config/serial.json");
     nlohmann::json json_file;
     _ifstream >> json_file;

@@ -5,6 +5,8 @@
 #define SERIAL_SENDER_H
 
 
+#include "labels/labels.h"
+
 #include <boost/asio.hpp>
 #include <chrono>
 #include <mutex>
@@ -13,10 +15,6 @@
 
 namespace vss_furgbol {
 namespace io {
-
-enum RoleLabels {
-    GK, CB, ST //GoalKeeper, CenterBack, STriker
-};
 
 class SerialSender {
     private:

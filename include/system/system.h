@@ -5,7 +5,9 @@
 #define SYSTEM_H
 
 
+#include "labels/labels.h"
 #include "io/serial_sender.h"
+#include "io/tcp_receiver.h"
 #include "world_model/world_model.h"
 #include "operation/gk_operation.h"
 #include "operation/cb_operation.h"
@@ -16,18 +18,6 @@
 
 namespace vss_furgbol {
 namespace system {
-
-enum TeamLabels {
-    ENEMY, FRIENDLY
-};
-
-enum TeamColorLabels {
-    BLUE, YELLOW
-};
-
-enum RoleLabels {
-    GK, CB, ST //GoalKeeper, CenterBack, STriker
-};
 
 class System {
     private:
@@ -53,6 +43,12 @@ class System {
         std::mutex st_mutex_;
         bool st_is_running_;
         bool st_status_changed_;
+
+        io::TCPReceiver *tcp_receiver_;
+        std::thread tcp_thread_;
+        std::mutex tcp_mutex_;
+        bool tcp_is_running_;
+        bool tcp_status_changed_;
         
         io::SerialSender *serial_sender_;
         std::thread serial_thread_;

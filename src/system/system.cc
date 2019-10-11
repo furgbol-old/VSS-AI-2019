@@ -55,10 +55,16 @@ void System::init() {
         st_thread_ = std::thread(&operation::STOperation::init, st_operator_);
         while (!st_status_changed_);
 
+        tcp_is_running_ = true;
+        tcp_status_changed_ = false;
+        tcp_receiver_ = new io::TCPReceiver(world_model_, &tcp_is_running_, &tcp_status_changed_);
+        tcp_thread_ = std::thread(&io::TCPReceiver::init, tcp_receiver_);
+        while (!tcp_status_changed_);
+
         serial_is_running_ = true;
         serial_is_paused_ = true;
         serial_status_changed_ = false;
-        serial_sender_ = new io::SerialSender(&serial_is_running_, &serial_is_paused_, &serial_status_changed_);
+        serial_sender_ = new io::SerialSender(&serial_is_running_, &serial_is_paused_, &serial_status_changed_, gk_operator_->getSendingQueue(), cb_operator_->getSendingQueue(), st_operator_->getSendingQueue());
         serial_thread_ = std::thread(&io::SerialSender::init, serial_sender_);
         while (!serial_status_changed_);
         if (!serial_is_running_) serial_thread_.join();
@@ -125,6 +131,15 @@ void System::exec() {
                     st_is_running_ = false;
                 }
                 while (!st_status_changed_);
+                {
+                    std::lock_guard<std::mutex> lock(tcp_mutex_);
+                    tcp_status_changed_ = false;
+                }
+                {
+                    std::lock_guard<std::mutex> lock(tcp_mutex_);
+                    tcp_is_running_ = false;
+                }
+                while (!tcp_status_changed_);
                 end();
                 break;
             case 1:

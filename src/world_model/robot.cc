@@ -27,5 +27,14 @@ void Robot::operator=(Robot robot) {
     speedAngle = robot.speedAngle;
 }
 
+void Robot::operator=(vss::Robot robot) {
+    x = robot.x;
+    y = robot.y;
+    angle = robot.angle;
+    speedX = robot.speedX;
+    speedY = robot.speedY;
+    speedAngle = robot.speedAngle;
+}
+
 } // namespace world_model
 } // namespace vss_furgbol

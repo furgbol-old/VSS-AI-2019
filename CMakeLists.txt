@@ -13,6 +13,7 @@ set(SRCS
     "src/geometry/vector_2d.cc"
     "src/geometry/field_line.cc"
     "src/io/serial_sender.cc"
+    "src/io/tcp_receiver.cc"
     "src/operation/gk_operation.cc"
     "src/operation/cb_operation.cc"
     "src/operation/st_operation.cc"
