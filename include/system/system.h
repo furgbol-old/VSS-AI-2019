@@ -31,6 +31,7 @@ class System {
         std::thread gk_thread_;
         std::mutex gk_mutex_;
         bool gk_is_running_;
+        bool gk_is_paused_;
         bool gk_status_changed_;
 
         operation::CBOperation *cb_operator_;

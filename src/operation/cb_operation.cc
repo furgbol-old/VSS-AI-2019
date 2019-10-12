@@ -54,9 +54,9 @@ void CBOperation::verifyPosition() {
     float robot_x = robot_->x;
     float line_x = field_line_.getX();
 
-    if (robot_x == line_x) out_of_place_ = NO;
-    else if (robot_x > line_x) out_of_place_ = AHEAD;
-    else if (robot_x < line_x) out_of_place_ = BEHIND;
+    if ((robot_x >= line_x - vision_error_) && (robot_x <= line_x + vision_error_)) out_of_place_ = NO;
+    else if (robot_x > line_x + vision_error_) out_of_place_ = AHEAD;
+    else if (robot_x < line_x - vision_error_) out_of_place_ = BEHIND;
 }
 
 void CBOperation::setMotion() {
@@ -66,13 +66,13 @@ void CBOperation::setMotion() {
         if (ball_->y > robot_->y) angular_direction_ = POSITIVE;
         else angular_direction_ = NEGATIVE;
     } else {
-        if (robot_->angle == target_angle_) {
+        if ((robot_->angle >= target_angle_ - vision_error_) && (robot_->angle <= target_angle_ + vision_error_)) {
             if (target_angle_ != 0) {
                 target_angle_ = 0;
                 linear_velocity_ = 0;
                 angular_velocity_ = 0;
             } else { 
-                if ((robot_->x != target_.x) || (robot_->y != target_.y)) {
+                if (((robot_->x <= target_.x - vision_error_) || (robot_->x >= target_.x + vision_error_)) || ((robot_->y <= target_.y - vision_error_) || (robot_->y >= target_.y + vision_error_))) {
                     angular_velocity_ = 0;
                     if (out_of_place_ == NO) {
                         linear_velocity_ = (int)(velocity_k_ * abs(robot_->y - target_.y));
@@ -91,8 +91,8 @@ void CBOperation::setMotion() {
             linear_velocity_ = 0;
             angular_velocity_ = velocity_k_ * abs(robot_->angle - target_angle_);
             if (angular_velocity_ > max_velocity_) angular_velocity_ = max_velocity_;
-            if (robot_->angle < target_angle_) angular_direction_ = POSITIVE;
-            if (robot_->angle > target_angle_) angular_direction_ = NEGATIVE;
+            if (robot_->angle < target_angle_) angular_direction_ = NEGATIVE;
+            if (robot_->angle > target_angle_) angular_direction_ = POSITIVE;
         }
     }
 }
@@ -120,6 +120,7 @@ void CBOperation::setConfigurations() {
 
     max_queue_size_ = json_file["max_queue_size"];
     velocity_k_ = json_file["velocity_gain"];
+    vision_error_ = json_file["vision_error"];
 
     robot_->setId(json_file["robots"]["centerback"]["id"]);
     field_line_.setX(json_file["robots"]["centerback"]["field_line"]["x"]);
@@ -135,6 +136,7 @@ void CBOperation::printConfigurations() {
     std::cout << "-> Configurations:" << std::endl;
     std::cout << "Max queue size: " << max_queue_size_ << std::endl;
     std::cout << "Velocity gain: " << velocity_k_ << std::endl;
+    std::cout << "Vision error: " << vision_error_ << std::endl;
     std::cout << "Robot:" << std::endl;
     std::cout << "\tID: " << robot_->getId() << std::endl;
     std::cout << "\tMax ball distante: " << max_ball_distance_ << std::endl;
@@ -148,10 +150,10 @@ void CBOperation::printConfigurations() {
 
 void CBOperation::setTarget() {
     if (out_of_place_ == NO) {
-        target_angle_ = 0;
+        target_angle_ = 90;
         target_.x = robot_->x;
         target_.y = geometry::Vector2D(
-            vss::Point(0, 0),
+            vss::Point(10, 65),
             vss::Point(ball_->x, ball_->y)
         ).getReferentY(robot_->x);
         if (target_.y < field_line_.getMinY()) target_.y = field_line_.getMinY();
@@ -159,8 +161,8 @@ void CBOperation::setTarget() {
     } else {
         target_.x = field_line_.getX();
         target_.y = robot_->y;
-        if (out_of_place_ == BEHIND) target_angle_ = 90;
-        else if (out_of_place_ == AHEAD) target_angle_ = -90;
+        if (out_of_place_ == BEHIND) target_angle_ = 0;
+        else if (out_of_place_ == AHEAD) target_angle_ = 180;
     }
 }
 

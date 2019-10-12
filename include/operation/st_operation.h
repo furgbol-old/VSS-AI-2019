@@ -23,6 +23,7 @@ class STOperation {
         geometry::FieldLine field_line_;
         int max_queue_size_;
         int velocity_k_;
+        int vision_error_;
         float max_ball_distance_;
         int max_velocity_;
 

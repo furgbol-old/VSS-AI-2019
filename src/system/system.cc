@@ -22,6 +22,7 @@ void System::init() {
     clearScreen();
 
     std::cout << "[STATUS]: Configuring system..." << std::endl;
+    std::cout << "AQUI" << std::endl;
     std::ifstream _ifstream("config/system.json");
     nlohmann::json json_file;
     _ifstream >> json_file;
@@ -49,6 +50,7 @@ void System::init() {
         std::cout << std::endl;
 
         gk_is_running_ = true;
+        gk_is_paused_ = true;
         gk_status_changed_ = false;
         gk_operator_ = new operation::GKOperation(&world_model_->robots_[team_color_][GK], &world_model_->ball_, &gk_is_running_, &gk_status_changed_);
         gk_thread_ = std::thread(&operation::GKOperation::init, gk_operator_);
@@ -97,8 +99,14 @@ void System::exec() {
         std::cout << std::endl << std::endl << "\t------[MENU]------" << std::endl;
         std::cout << "[1] - Start system" << std::endl;
         std::cout << "[2] - Start vision" << std::endl;
-        std::cout << "[3] - Pause system" << std::endl;
-        std::cout << "[4] - Pause vision" << std::endl;
+        std::cout << "[3] - Start goalkeeper" << std::endl;
+        std::cout << "[4] - Start centerback" << std::endl;
+        std::cout << "[5] - Start striker" << std::endl;
+        std::cout << "[6] - Pause system" << std::endl;
+        std::cout << "[7] - Pause vision" << std::endl;
+        std::cout << "[8] - Pause goalkeeper" << std::endl;
+        std::cout << "[9] - Pause centerback" << std::endl;
+        std::cout << "[10] - Pause striker" << std::endl;
         std::cout << "[0] - Close system" << std::endl;
         std::cout << "\t-> ";
         std::cin >> option;
@@ -230,7 +238,7 @@ void System::exec() {
                     while (!tcp_status_changed_);
                 }
                 break;
-            case 3:
+            case 6:
                 if (!serial_is_paused_) {
                     {
                         std::lock_guard<std::mutex> lock(serial_mutex_);
@@ -243,7 +251,7 @@ void System::exec() {
                     while (!serial_status_changed_);
                 }
                 break;
-            case 4:
+            case 7:
                 if (!tcp_is_paused_) {
                     {
                         std::lock_guard<std::mutex> lock(tcp_mutex_);
