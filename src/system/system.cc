@@ -65,7 +65,7 @@ void System::createSTOperator() {
 }
 
 void System::createSerialSender() {
-    serial_sender_ = new io::SerialSender(execution_mode_, &gk_operator_->sending_queue, &cb_operator_->sending_queue, &st_operator_->sending_queue);
+    serial_sender_ = new io::SerialSender(execution_mode_, team_color_, &gk_operator_->sending_queue, &cb_operator_->sending_queue, &st_operator_->sending_queue);
     serial_thread_ = std::thread(&io::SerialSender::init, serial_sender_);
 }
 

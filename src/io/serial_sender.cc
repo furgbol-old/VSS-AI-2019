@@ -14,7 +14,7 @@
 namespace vss_furgbol {
 namespace io {
 
-SerialSender::SerialSender(int execution_mode, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue) :
+SerialSender::SerialSender(int execution_mode, int team_color, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue) :
     gk_sending_queue_(gk_sending_queue), cb_sending_queue_(cb_sending_queue), st_sending_queue_(st_sending_queue),
     mode_(execution_mode), io_service_(), port_(io_service_), buffer_(buf_.data()), running_(true),
     which_queue_(GK) {}
@@ -31,6 +31,20 @@ void SerialSender::init() {
             port_.set_option(boost::asio::serial_port_base::character_size(8));
         } catch (boost::system::system_error error) {
             std::cout << "[SERIAL COMMUNICATOR ERROR]: " << error.what() << std::endl;
+            running_ = false;
+        }
+    } else if (mode_ == SIMULATION) {
+        try {
+            command_sender_ = new vss::CommandSender();
+            switch (team_color_) {
+                case BLUE:
+                    command_sender_->createSocket(vss::TeamType::Blue);
+                    break;
+                case YELLOW:
+                    command_sender_->createSocket(vss::TeamType::Yellow);
+                    break;
+            }
+        } catch (zmq::error_t& error) {
             running_ = false;
         }
     }
@@ -125,8 +139,45 @@ void SerialSender::exec() {
 void SerialSender::end() {}
 
 void SerialSender::send(std::vector<unsigned char> buffer) { 
-    if (buffer[operation::ROBOT_ID] >= 128)
-        port_.write_some(boost::asio::buffer(buffer, buffer.size()));
+    if (buffer[operation::ROBOT_ID] >= 128) {
+        switch (mode_) {
+            case REAL:
+                port_.write_some(boost::asio::buffer(buffer, buffer.size()));
+                break;
+            case SIMULATION:
+                linear_velocity_ = buffer[operation::LINEAR_VELOCITY];
+                angular_velocity_ = buffer[operation::ANGULAR_VELOCITY];
+                linear_direction_ = buffer[operation::LINEAR_DIRECTION];
+                angular_direction_ = buffer[operation::ANGULAR_DIRECTION];
+                calculateVelocity();
+                command_.commands.push_back(vss::WheelsCommand(velocity_right_, velocity_left_));
+                if (which_queue_ == ST) {
+                    command_sender_->sendCommand(command_);
+                    command_.commands.clear();
+                }
+        }
+    }
+}
+
+void SerialSender::calculateVelocity() {
+    errorCorrector();
+
+    linear_velocity_ = ((1.5 * linear_velocity_) / 127.0) * (linear_direction_ - 2);
+    angular_velocity_ = ((37.5 * angular_velocity_) / 127.0) * (angular_direction_ - 2);
+
+    velocity_right_ = ((linear_velocity_ / 0.03) + ((angular_velocity_ * 0.04) / 0.03));
+    velocity_left_ = ((linear_velocity_ / 0.03) - ((angular_velocity_ * 0.04) / 0.03));
+}
+
+void SerialSender::errorCorrector() {
+    float error;
+
+    if ((linear_velocity_ + angular_velocity_) > 127.0) {
+        error = (linear_velocity_ + angular_velocity_) - 127.0;
+        error = error/2.0;
+        linear_velocity_ = linear_velocity_ - error;
+        angular_velocity_ = angular_velocity_ - error;
+    }
 }
 
 } // namespace io

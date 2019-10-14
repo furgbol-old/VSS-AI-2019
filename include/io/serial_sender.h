@@ -5,6 +5,8 @@
 #define SERIAL_SENDER_H
 
 
+#include "Communications/CommandSender.h"
+
 #include <boost/asio.hpp>
 #include <chrono>
 #include <cinttypes>
@@ -23,7 +25,11 @@ class SerialSender {
         boost::asio::streambuf::const_buffers_type buffer_;
         boost::asio::serial_port port_;
 
+        vss::CommandSender *command_sender_;
+        vss::Command command_;
+
         int mode_;
+        int team_color_;
         int which_queue_;
 
         bool running_;
@@ -39,6 +45,14 @@ class SerialSender {
 
         std::mutex mutex_;
 
+        int linear_velocity_;
+        int angular_velocity_;
+        int linear_direction_;
+        int angular_direction_;
+
+        float velocity_right_;
+        float velocity_left_;
+
         void configure();
         void printConfigurations();
 
@@ -46,9 +60,12 @@ class SerialSender {
         void end();
 
         void send(std::vector<unsigned char> buffer);
+
+        void calculateVelocity();
+        void errorCorrector();
         
     public:
-        SerialSender(int execution_mode, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue);
+        SerialSender(int execution_mode, int team_color_, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue);
         ~SerialSender();
 
         void init();
