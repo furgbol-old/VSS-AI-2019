@@ -32,6 +32,9 @@ class CBOperation {
 
         int side_;
 
+        bool *running_;
+        bool *changed_;
+
         std::mutex mutex_;
 
         int out_of_place_;
@@ -68,7 +71,7 @@ class CBOperation {
     public:
         std::queue<std::vector<uint8_t>> sending_queue;
 
-        CBOperation(vss::Ball *ball, world_model::Robot *robot, int side);
+        CBOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side);
         ~CBOperation();
 
         void init();

@@ -9,48 +9,88 @@
 namespace vss_furgbol {
 namespace io {
 
-TCPReceiver::TCPReceiver(world_model::WorldModel *world_model) : 
-    world_model_(world_model), running_(true) {}
+TCPReceiver::TCPReceiver(bool *running, bool *changed, world_model::WorldModel *world_model) : 
+    world_model_(world_model), running_(running), changed_(changed) {}
 
 TCPReceiver::~TCPReceiver() {}
 
 void TCPReceiver::init() {
     setConfigurations();
 
-    state_receiver_ = new vss::StateReceiver();
-    state_receiver_->createSocket(); 
+    try {
+        state_receiver_ = new vss::StateReceiver();
+        state_receiver_->createSocket();
+    } catch (zmq::error_t &error) {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            *running_ = false;
+        }
+    }
 
-    printConfigurations();
+    if (*running_) printConfigurations();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
+    }
     
     exec();
-    
-    end();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
+    }
 }
 
 void TCPReceiver::exec() {
-    while (running_) {
-        state_ = state_receiver_->receiveState(vss::FieldTransformationType::None);
-        //std::cout << state_ << std::endl;
+    bool previous_status = false;;
 
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            world_model_->ball = state_.ball;
-            for (int i = 0; i < 3; i++) world_model_->team_blue[i] = state_.teamYellow[i];
-            for (int i = 0; i < 3; i++) world_model_->team_yellow[i] = state_.teamBlue[i];
+    while (true) {
+        while (*running_) {
+            if (previous_status == false) {
+                previous_status = true;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
+            }
+
+            state_ = state_receiver_->receiveState(vss::FieldTransformationType::None);
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                world_model_->ball = state_.ball;
+                for (int i = 0; i < 3; i++) world_model_->team_blue[i] = state_.teamYellow[i];
+                for (int i = 0; i < 3; i++) world_model_->team_yellow[i] = state_.teamBlue[i];
+            }
+
+            //std::cout << state_ << std::endl;
+            //std::cout << std::endl << *world_model_ << std::endl;
         }
 
-        //std::cout << std::endl << *world_model_ << std::endl;
+        if (!*running_) {
+            end();
+            
+            if (previous_status == true) {
+                previous_status = false;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
+            }
+
+            break;
+        }
     }
 }
 
 void TCPReceiver::end() {
-    std::cout << "[STATUS]: Closing TCP..." << std::endl;
-    state_receiver_->closeSocket();
+    std::cout << "[STATUS]: Closing vision receiver..." << std::endl;
+    try {
+        state_receiver_->closeSocket();
+    } catch (zmq::error_t &error) {}
 }
 
-void TCPReceiver::setConfigurations() { std::cout << "[STATUS]: Configuring TCP..." << std::endl; }
+void TCPReceiver::setConfigurations() { std::cout << "[STATUS]: Configuring vision receiver..." << std::endl; }
 
-void TCPReceiver::printConfigurations() { std::cout << "[STATUS]: TCP configuration done!" << std::endl; }
+void TCPReceiver::printConfigurations() { std::cout << "[STATUS]: Vision receiver configuration done!" << std::endl; }
 
 } // namespace io
 } // namespace vss_furgbol 

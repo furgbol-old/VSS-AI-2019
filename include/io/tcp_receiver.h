@@ -22,7 +22,9 @@ class TCPReceiver {
 
         world_model::WorldModel *world_model_;
 
-        bool running_;
+        bool *running_;
+        bool *changed_;
+
         std::mutex mutex_;
 
         void setConfigurations();
@@ -32,7 +34,7 @@ class TCPReceiver {
         void end();
 
     public:
-        TCPReceiver(world_model::WorldModel *world_model);
+        TCPReceiver(bool *running, bool *changed, world_model::WorldModel *world_model);
         ~TCPReceiver();
 
         void init();

@@ -14,10 +14,11 @@
 namespace vss_furgbol {
 namespace io {
 
-SerialSender::SerialSender(int execution_mode, int team_color, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue) :
+SerialSender::SerialSender(int execution_mode, int team_color, bool *running, bool *changed, bool *gk_is_running, bool *cb_is_running, bool *st_is_running, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue) :
     gk_sending_queue_(gk_sending_queue), cb_sending_queue_(cb_sending_queue), st_sending_queue_(st_sending_queue),
-    mode_(execution_mode), io_service_(), port_(io_service_), buffer_(buf_.data()), running_(true),
-    which_queue_(GK) {}
+    mode_(execution_mode), io_service_(), port_(io_service_), buffer_(buf_.data()), running_(running),
+    changed_(changed), which_queue_(GK), gk_is_running_(gk_is_running), cb_is_running_(cb_is_running),
+    st_is_running_(st_is_running) {}
 
 SerialSender::~SerialSender() {}
 
@@ -31,8 +32,12 @@ void SerialSender::init() {
             port_.set_option(boost::asio::serial_port_base::character_size(8));
         } catch (boost::system::system_error error) {
             std::cout << "[SERIAL COMMUNICATOR ERROR]: " << error.what() << std::endl;
-            running_ = false;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                *running_ = false;
+            }
         }
+        if (*running_) printConfigurations();
     } else if (mode_ == SIMULATION) {
         try {
             command_sender_ = new vss::CommandSender();
@@ -45,12 +50,22 @@ void SerialSender::init() {
                     break;
             }
         } catch (zmq::error_t& error) {
-            running_ = false;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                *running_ = false;
+            }
         }
+    }
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
     }
 
     exec();
-    end();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
+    }
 }
 
 void SerialSender::configure() {
@@ -76,46 +91,93 @@ void SerialSender::printConfigurations() {
 
 
 void SerialSender::exec() {
-    std::vector<uint8_t> buffer;
     std::chrono::system_clock::time_point compair_time = std::chrono::high_resolution_clock::now();
+    bool previous_status = false;
 
-    do {
-        if ((std::chrono::high_resolution_clock::now() - compair_time) >= sending_frequency_) {
-            switch (which_queue_) {
-                case GK:
-                    if (!gk_sending_queue_->empty()) {
-                        {
-                            std::lock_guard<std::mutex> lock(mutex_);
-                            buffer = gk_sending_queue_->front();
-                        }
-                    }
-                    //std::cout << "Goalkeeper!" << std::endl;
-                    break;
-                case CB:
-                    if (!cb_sending_queue_->empty()) {
-                        {
-                            std::lock_guard<std::mutex> lock(mutex_);
-                            buffer = cb_sending_queue_->front();
-                        }
-                    }
-                    //std::cout << "Centerback!" << std::endl;
-                    break;
-                case ST:
-                    if (!st_sending_queue_->empty()) {
-                        {
-                            std::lock_guard<std::mutex> lock(mutex_);
-                            buffer = st_sending_queue_->front();
-                        }
-                    }
-                    //std::cout << "Striker!" << std::endl;
-                    break;
+    while (true) {
+        while (*running_) {
+            if (previous_status == false) {
+                previous_status = true;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
             }
-            send(buffer);
-            which_queue_++;
-            if (which_queue_ > ST) which_queue_ = GK;
-            compair_time = std::chrono::high_resolution_clock::now();
+
+            if ((std::chrono::high_resolution_clock::now() - compair_time) >= sending_frequency_) {
+                switch (which_queue_) {
+                    case GK:
+                        if (*gk_is_running_) {
+                            if (!gk_sending_queue_->empty()) {
+                                {
+                                    std::lock_guard<std::mutex> lock(mutex_);
+                                    send(gk_sending_queue_->front());
+                                }
+                            }
+                            break;
+                        } else if (mode_ == SIMULATION) {
+                            command_.commands.push_back(vss::WheelsCommand(0, 0));
+                        }
+                    case CB:
+                        if (*cb_is_running_) {
+                            if (!cb_sending_queue_->empty()) {
+                                {
+                                    std::lock_guard<std::mutex> lock(mutex_);
+                                    send(cb_sending_queue_->front());
+                                }
+                            }
+                            break;
+                        } else if (mode_ == SIMULATION) {
+                            command_.commands.push_back(vss::WheelsCommand(0, 0));
+                        }
+                    case ST:
+                        if (*st_is_running_) {
+                            if (!st_sending_queue_->empty()) {
+                                {
+                                    std::lock_guard<std::mutex> lock(mutex_);
+                                    send(st_sending_queue_->front());
+                                }
+                            }
+                            break;
+                        } else if (mode_ == SIMULATION) {
+                            command_.commands.push_back(vss::WheelsCommand(0, 0));
+                        }
+                }
+                which_queue_++;
+                if (which_queue_ > ST) {
+                    which_queue_ = GK;
+                    command_sender_->sendCommand(command_);
+                    std::cout << "Sended: {" << std::endl;
+                    std::cout << "\tRobot 1:" << std::endl;
+                    std::cout << "\t\t-> Velocity Right: " << command_.commands[GK].rightVel << std::endl;
+                    std::cout << "\t\t-> Velocity Left: " << command_.commands[GK].leftVel << std::endl;
+                    // std::cout << "\tRobot 2:" << std::endl;
+                    // std::cout << "\t\t-> Velocity Right: " << command_.commands[CB].rightVel << std::endl;
+                    // std::cout << "\t\t-> Velocity Left: " << command_.commands[CB].leftVel << std::endl;
+                    // std::cout << "\tRobot 3:" << std::endl;
+                    // std::cout << "\t\t-> Velocity Right: " << command_.commands[ST].rightVel << std::endl;
+                    // std::cout << "\t\t-> Velocity Left: " << command_.commands[ST].leftVel << std::endl;
+                    // std::cout << "}" << std::endl;
+                    command_.commands.clear();
+                }
+                compair_time = std::chrono::high_resolution_clock::now();
+            }
         }
-    } while (running_);
+
+        if (!*running_) {
+            end();
+            
+            if (previous_status == true) {
+                previous_status = false;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
+            }
+
+            break;
+        }
+    }
 
     /*while (running_) {
         if (!gk_sending_queue_->empty()) {
@@ -136,7 +198,12 @@ void SerialSender::exec() {
     }*/
 }
 
-void SerialSender::end() {}
+void SerialSender::end() {
+    std::cout << "[STATUS]: Closing serial..." << std::endl;
+    try {
+        port_.close();
+    } catch (boost::system::system_error error) {}
+}
 
 void SerialSender::send(std::vector<unsigned char> buffer) { 
     if (buffer[operation::ROBOT_ID] >= 128) {
@@ -145,39 +212,21 @@ void SerialSender::send(std::vector<unsigned char> buffer) {
                 port_.write_some(boost::asio::buffer(buffer, buffer.size()));
                 break;
             case SIMULATION:
-                linear_velocity_ = buffer[operation::LINEAR_VELOCITY];
-                angular_velocity_ = buffer[operation::ANGULAR_VELOCITY];
+                linear_velocity_ = (float)buffer[operation::LINEAR_VELOCITY];
+                angular_velocity_ = (float)buffer[operation::ANGULAR_VELOCITY];
                 linear_direction_ = buffer[operation::LINEAR_DIRECTION];
                 angular_direction_ = buffer[operation::ANGULAR_DIRECTION];
                 calculateVelocity();
                 command_.commands.push_back(vss::WheelsCommand(velocity_right_, velocity_left_));
-                if (which_queue_ == ST) {
-                    command_sender_->sendCommand(command_);
-                    command_.commands.clear();
-                }
         }
     }
 }
 
 void SerialSender::calculateVelocity() {
-    errorCorrector();
-
-    linear_velocity_ = ((1.5 * linear_velocity_) / 127.0) * (linear_direction_ - 2);
-    angular_velocity_ = ((37.5 * angular_velocity_) / 127.0) * (angular_direction_ - 2);
-
+    linear_velocity_ = ((20 * linear_velocity_) / 127.0) * (linear_direction_ - 2);
+    angular_velocity_ = ((20 * angular_velocity_) / 127.0) * (angular_direction_ - 2);
     velocity_right_ = ((linear_velocity_ / 0.03) + ((angular_velocity_ * 0.04) / 0.03));
     velocity_left_ = ((linear_velocity_ / 0.03) - ((angular_velocity_ * 0.04) / 0.03));
-}
-
-void SerialSender::errorCorrector() {
-    float error;
-
-    if ((linear_velocity_ + angular_velocity_) > 127.0) {
-        error = (linear_velocity_ + angular_velocity_) - 127.0;
-        error = error/2.0;
-        linear_velocity_ = linear_velocity_ - error;
-        angular_velocity_ = angular_velocity_ - error;
-    }
 }
 
 } // namespace io

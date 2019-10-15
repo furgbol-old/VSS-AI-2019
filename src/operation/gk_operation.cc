@@ -12,17 +12,29 @@
 namespace vss_furgbol {
 namespace operation {
 
-GKOperation::GKOperation(vss::Ball *ball, world_model::Robot *robot, int side) :
-    ball_(ball), robot_(robot), side_(side), sending_queue() {}
+GKOperation::GKOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side) :
+    ball_(ball), robot_(robot), side_(side), sending_queue(), running_(running), changed_(changed) {}
 
 GKOperation::~GKOperation() {}
 
 void GKOperation::init() {
     configure();
+    printConfigurations();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
+    }
+
     exec();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
+    }
 }
 
 void GKOperation::configure() {
+    std::cout << "[STATUS]: Configuring goalkeeper operator..." << std::endl;
+
     std::ifstream ifstream("config/operation.json");
     nlohmann::json json_file;
     ifstream >> json_file;
@@ -66,38 +78,61 @@ void GKOperation::printConfigurations() {
 }
 
 void GKOperation::exec() {
+    bool previous_status = false;
     while (true) {
-        /*{
-            std::lock_guard<std::mutex> lock(mutex_);
-            std::cout << *ball_ << std::endl;
-            std::cout << *robot_ << std::endl;
-        }*/
+        while (*running_) {
+            if (previous_status == false) {
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
+            }
+            /*{
+                std::lock_guard<std::mutex> lock(mutex_);
+                std::cout << *ball_ << std::endl;
+                std::cout << *robot_ << std::endl;
+            }*/
 
-        verifyPosition();
-        /*switch (out_of_place_) {
-            case NO:
-                std::cout << "[OPERATION]: In the right place!" << std::endl;
-                break;
-            case AHEAD:
-                std::cout << "[OPERATION]: Ahead!" << std::endl;
-                break;
-            case BEHIND:
-                std::cout << "[OPERATION]: Behind!" << std::endl;
-                break;
-        }*/
+            verifyPosition();
+            /*switch (out_of_place_) {
+                case NO:
+                    std::cout << "In the right place!" << std::endl;
+                    break;
+                case AHEAD:
+                    std::cout << "Ahead!" << std::endl;
+                    break;
+                case BEHIND:
+                    std::cout << "Behind!" << std::endl;
+                    break;
+            }*/
 
-        setTarget();
-        //std::cout << "Target Position: (" << target_.x << ", " << target_.y << ")" << std::endl;
-        //std::cout << "Target Angle: " << target_angle_ << std::endl;
+            setTarget();
+            //std::cout << "Target Position: (" << target_.x << ", " << target_.y << ")" << std::endl;
+            //std::cout << "Target Angle: " << target_angle_ << std::endl;
 
-        setMotion();
+            setMotion();
+            serialize();
+        }
 
-        serialize();
+        if (!*running_) {
+            end();
+            
+            if (previous_status == true) {
+                previous_status = false;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
+            }
+
+            break;
+        }
     }
-    end();
 }
 
-void GKOperation::end() {}
+void GKOperation::end() {
+    std::cout << "[STATUS]: Closing goalkeeper operation..." << std::endl;
+}
 
 void GKOperation::verifyPosition() {
     float robot_x;
@@ -155,14 +190,23 @@ void GKOperation::setMotion() {
     linear_velocity_ = 0;
     angular_velocity_ = 0;
 
-    if (canKick(robot_x, robot_y, ball_x, ball_y)) setKick(robot_y, ball_y);
-    else if (outOfAngle(robot_angle)) fixesAngle(robot_angle);
-    else if ((target_angle_ != 90) && (out_of_place_ == NO)) {
+    if (canKick(robot_x, robot_y, ball_x, ball_y)) {
+        //std::cout << "Robot can kick!" << std::endl;
+        setKick(robot_y, ball_y);
+    } else if (outOfAngle(robot_angle)) {
+        //std::cout << "Robot is out of angle!" << std::endl;
+        fixesAngle(robot_angle);
+    } else if ((target_angle_ != 90) && (out_of_place_ == NO)) {
+        //std::cout << "Robot have to get back to 90 degrees." << std::endl;
         target_angle_ = 90;
         linear_velocity_ = 0;
         angular_velocity_ = 0;
-    } else if (outOfTarget(robot_x, robot_y, ball_x, ball_y))
+    } else if (outOfTarget(robot_x, robot_y, ball_x, ball_y)) {
         goToTarget(robot_x, robot_y, ball_x, ball_y);
+        //std::cout << "Robot is out of target." << std::endl;
+    } else {
+        //std::cout << "Robot is on the right place." << std::endl;
+    }
 }
 
 void GKOperation::serialize() {
@@ -194,7 +238,14 @@ bool GKOperation::canKick(float robot_x, float robot_y, float ball_x, float ball
 }
 
 bool GKOperation::outOfAngle(float robot_angle) {
-    return ((target_angle_ < (robot_angle - error_threshold_)) || ((target_angle_ > (robot_angle + error_threshold_))));
+    if (target_angle_ == 0) {
+        if ((robot_angle < (360 - error_threshold_)) || (robot_angle > (target_angle_ + error_threshold_)))
+            return true;
+        else
+            return false;
+        
+    } else
+        return ((robot_angle < (target_angle_ - error_threshold_)) || ((robot_angle > (target_angle_ + error_threshold_))));
 }
 
 bool GKOperation::outOfTarget(float robot_x, float robot_y, float ball_x, float ball_y) {
@@ -219,10 +270,10 @@ void GKOperation::setKick(float robot_y, float ball_y) {
 
 void GKOperation::fixesAngle(float robot_angle) {
     linear_velocity_ = 0;
-    angular_velocity_ = velocity_gain_ * abs(robot_->angle - target_angle_);
+    angular_velocity_ = velocity_gain_ * abs(robot_angle - target_angle_);
     if (angular_velocity_ > max_velocity_) angular_velocity_ = max_velocity_;
-    if (robot_->angle < target_angle_) angular_direction_ = NEGATIVE;
-    if (robot_->angle > target_angle_) angular_direction_ = POSITIVE;
+    if (robot_angle < target_angle_) angular_direction_ = NEGATIVE;
+    else if (robot_angle > target_angle_) angular_direction_ = POSITIVE;
 }
 
 void GKOperation::goToTarget(float robot_x, float robot_y, float ball_x, float ball_y) {

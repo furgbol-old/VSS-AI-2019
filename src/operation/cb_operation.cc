@@ -12,14 +12,24 @@
 namespace vss_furgbol {
 namespace operation {
 
-CBOperation::CBOperation(vss::Ball *ball, world_model::Robot *robot, int side) :
-    ball_(ball), robot_(robot), side_(side), sending_queue() {}
+CBOperation::CBOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side) :
+    ball_(ball), robot_(robot), side_(side), sending_queue(), running_(running), changed_(changed) {}
 
 CBOperation::~CBOperation() {}
 
 void CBOperation::init() {
     configure();
+    printConfigurations();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
+    }
+
     exec();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        *changed_ = true;
+    }
 }
 
 void CBOperation::configure() {
@@ -66,34 +76,36 @@ void CBOperation::printConfigurations() {
 }
 
 void CBOperation::exec() {
+    bool previous_status = false;
     while (true) {
-        /*{
-            std::lock_guard<std::mutex> lock(mutex_);
-            std::cout << *ball_ << std::endl;
-            std::cout << *robot_ << std::endl;
-        }*/
+        while (*running_) {
+            if (previous_status == false) {
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
+            }
 
-        verifyPosition();
-        /*switch (out_of_place_) {
-            case NO:
-                std::cout << "[OPERATION]: In the right place!" << std::endl;
-                break;
-            case AHEAD:
-                std::cout << "[OPERATION]: Ahead!" << std::endl;
-                break;
-            case BEHIND:
-                std::cout << "[OPERATION]: Behind!" << std::endl;
-                break;
-        }*/
+            verifyPosition();
+            setTarget();
+            setMotion();
+            serialize();
+        }
 
-        setTarget();
-        //std::cout << "Target Position: (" << target_.x << ", " << target_.y << ")" << std::endl;
-        //std::cout << "Target Angle: " << target_angle_ << std::endl;
+        if (!*running_) {
+            end();
+            
+            if (previous_status == true) {
+                previous_status = false;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    *changed_ = true;
+                }
+            }
 
-        setMotion();
-        serialize();
+            break;
+        }
     }
-    end();
 }
 
 void CBOperation::end() {}
