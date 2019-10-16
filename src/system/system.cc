@@ -61,8 +61,8 @@ void System::startTCPReceiver() {
     } else {
         tcp_is_running_ = true;
         tcp_changed_ = false;
-        tcp_receiver_ = new io::TCPReceiver(&tcp_is_running_, &tcp_changed_, world_model_);
-        tcp_thread_ = std::thread(&io::TCPReceiver::init, tcp_receiver_);
+        tcp_receiver_ = new io::Receiver(&tcp_is_running_, &tcp_changed_, world_model_);
+        tcp_thread_ = std::thread(&io::Receiver::init, tcp_receiver_);
         while (!tcp_changed_);
     }
 }
@@ -148,8 +148,8 @@ void System::startSerialSender() {
         if (gk_is_running_ || cb_is_running_ || st_is_running_) {
             serial_is_running_ = true;
             serial_changed_ = false;
-            serial_sender_ = new io::SerialSender(execution_mode_, team_color_, &serial_is_running_, &serial_changed_, &gk_is_running_, &cb_is_running_, &st_is_running_, &gk_operator_->sending_queue, &cb_operator_->sending_queue, &st_operator_->sending_queue);
-            serial_thread_ = std::thread(&io::SerialSender::init, serial_sender_);
+            serial_sender_ = new io::Sender(execution_mode_, team_color_, &serial_is_running_, &serial_changed_, &gk_is_running_, &cb_is_running_, &st_is_running_, &gk_operator_->sending_queue, &cb_operator_->sending_queue, &st_operator_->sending_queue);
+            serial_thread_ = std::thread(&io::Sender::init, serial_sender_);
             while (!serial_changed_);
         } else {
             std::cout << "[SYSTEM ERROR]: Cannot start serial communication. At least one of the operators must be running!" << std::endl;

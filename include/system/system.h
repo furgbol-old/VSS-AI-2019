@@ -5,8 +5,8 @@
 #define SYSTEM_H
 
 
-#include "io/serial_sender.h"
-#include "io/tcp_receiver.h"
+#include "io/sender.h"
+#include "io/receiver.h"
 #include "operation/cb_operation.h"
 #include "operation/gk_operation.h"
 #include "operation/st_operation.h"
@@ -28,13 +28,13 @@ class System {
 
         world_model::WorldModel *world_model_;
 
-        io::SerialSender *serial_sender_;
+        io::Sender *serial_sender_;
         std::thread serial_thread_;
         std::mutex serial_mutex_;
         bool serial_is_running_;
         bool serial_changed_;
 
-        io::TCPReceiver *tcp_receiver_;
+        io::Receiver *tcp_receiver_;
         std::thread tcp_thread_;
         std::mutex tcp_mutex_;
         bool tcp_is_running_;

@@ -2,8 +2,7 @@
 
 
 #include "labels/labels.h"
-#include "operation/operation.h"
-#include "io/serial_sender.h"
+#include "io/sender.h"
 
 #include "json.hpp"
 
@@ -14,15 +13,15 @@
 namespace vss_furgbol {
 namespace io {
 
-SerialSender::SerialSender(int execution_mode, int team_color, bool *running, bool *changed, bool *gk_is_running, bool *cb_is_running, bool *st_is_running, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue) :
+Sender::Sender(int execution_mode, int team_color, bool *running, bool *changed, bool *gk_is_running, bool *cb_is_running, bool *st_is_running, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue) :
     gk_sending_queue_(gk_sending_queue), cb_sending_queue_(cb_sending_queue), st_sending_queue_(st_sending_queue),
     mode_(execution_mode), io_service_(), port_(io_service_), buffer_(buf_.data()), running_(running),
     changed_(changed), which_queue_(GK), gk_is_running_(gk_is_running), cb_is_running_(cb_is_running),
     st_is_running_(st_is_running) {}
 
-SerialSender::~SerialSender() {}
+Sender::~Sender() {}
 
-void SerialSender::init() {
+void Sender::init() {
     configure();
 
     if (mode_ == REAL) {
@@ -68,7 +67,7 @@ void SerialSender::init() {
     }
 }
 
-void SerialSender::configure() {
+void Sender::configure() {
     std::cout << std::endl << "[STATUS]: Configuring serial..." << std::endl;
     std::ifstream _ifstream("config/serial.json");
     nlohmann::json json_file;
@@ -79,7 +78,7 @@ void SerialSender::configure() {
     period_ = 1/(float)frequency_;
 }
 
-void SerialSender::printConfigurations() {
+void Sender::printConfigurations() {
     std::cout << "[STATUS]: Serial configuration done!" << std::endl;
 
     std::cout << "-> Configurations:" << std::endl;
@@ -90,7 +89,7 @@ void SerialSender::printConfigurations() {
 }
 
 
-void SerialSender::exec() {
+void Sender::exec() {
     std::chrono::system_clock::time_point compair_time = std::chrono::high_resolution_clock::now();
     bool previous_status = false;
 
@@ -198,31 +197,31 @@ void SerialSender::exec() {
     }*/
 }
 
-void SerialSender::end() {
+void Sender::end() {
     std::cout << "[STATUS]: Closing serial..." << std::endl;
     try {
         port_.close();
     } catch (boost::system::system_error error) {}
 }
 
-void SerialSender::send(std::vector<unsigned char> buffer) { 
-    if (buffer[operation::ROBOT_ID] >= 128) {
+void Sender::send(std::vector<unsigned char> buffer) { 
+    if (buffer[ROBOT_ID] >= 128) {
         switch (mode_) {
             case REAL:
                 port_.write_some(boost::asio::buffer(buffer, buffer.size()));
                 break;
             case SIMULATION:
-                linear_velocity_ = (float)buffer[operation::LINEAR_VELOCITY];
-                angular_velocity_ = (float)buffer[operation::ANGULAR_VELOCITY];
-                linear_direction_ = buffer[operation::LINEAR_DIRECTION];
-                angular_direction_ = buffer[operation::ANGULAR_DIRECTION];
+                linear_velocity_ = (float)buffer[LINEAR_VELOCITY];
+                angular_velocity_ = (float)buffer[ANGULAR_VELOCITY];
+                linear_direction_ = buffer[LINEAR_DIRECTION];
+                angular_direction_ = buffer[ANGULAR_DIRECTION];
                 calculateVelocity();
                 command_.commands.push_back(vss::WheelsCommand(velocity_right_, velocity_left_));
         }
     }
 }
 
-void SerialSender::calculateVelocity() {
+void Sender::calculateVelocity() {
     linear_velocity_ = ((20 * linear_velocity_) / 127.0) * (linear_direction_ - 2);
     angular_velocity_ = ((20 * angular_velocity_) / 127.0) * (angular_direction_ - 2);
     velocity_right_ = ((linear_velocity_ / 0.03) + ((angular_velocity_ * 0.04) / 0.03));

@@ -1,7 +1,7 @@
 // ® Copyright FURGBot 2019
 
 
-#include "io/tcp_receiver.h"
+#include "io/receiver.h"
 
 #include <iostream>
 
@@ -9,12 +9,12 @@
 namespace vss_furgbol {
 namespace io {
 
-TCPReceiver::TCPReceiver(bool *running, bool *changed, world_model::WorldModel *world_model) : 
+Receiver::Receiver(bool *running, bool *changed, world_model::WorldModel *world_model) : 
     world_model_(world_model), running_(running), changed_(changed) {}
 
-TCPReceiver::~TCPReceiver() {}
+Receiver::~Receiver() {}
 
-void TCPReceiver::init() {
+void Receiver::init() {
     setConfigurations();
 
     try {
@@ -40,7 +40,7 @@ void TCPReceiver::init() {
     }
 }
 
-void TCPReceiver::exec() {
+void Receiver::exec() {
     bool previous_status = false;;
 
     while (true) {
@@ -81,16 +81,16 @@ void TCPReceiver::exec() {
     }
 }
 
-void TCPReceiver::end() {
+void Receiver::end() {
     std::cout << "[STATUS]: Closing vision receiver..." << std::endl;
     try {
         state_receiver_->closeSocket();
     } catch (zmq::error_t &error) {}
 }
 
-void TCPReceiver::setConfigurations() { std::cout << "[STATUS]: Configuring vision receiver..." << std::endl; }
+void Receiver::setConfigurations() { std::cout << "[STATUS]: Configuring vision receiver..." << std::endl; }
 
-void TCPReceiver::printConfigurations() { std::cout << "[STATUS]: Vision receiver configuration done!" << std::endl; }
+void Receiver::printConfigurations() { std::cout << "[STATUS]: Vision receiver configuration done!" << std::endl; }
 
 } // namespace io
 } // namespace vss_furgbol 

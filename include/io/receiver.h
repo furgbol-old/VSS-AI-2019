@@ -1,8 +1,8 @@
 // ® Copyright FURGBot 2019
 
 
-#ifndef TCP_RECEIVER_H
-#define TCP_RECEIVER_H
+#ifndef RECEIVER_H
+#define RECEIVER_H
 
 
 #include "world_model/world_model.h"
@@ -15,7 +15,7 @@
 namespace vss_furgbol {
 namespace io {
 
-class TCPReceiver {
+class Receiver {
     private:
         vss::State state_;
         vss::IStateReceiver *state_receiver_;
@@ -34,8 +34,8 @@ class TCPReceiver {
         void end();
 
     public:
-        TCPReceiver(bool *running, bool *changed, world_model::WorldModel *world_model);
-        ~TCPReceiver();
+        Receiver(bool *running, bool *changed, world_model::WorldModel *world_model);
+        ~Receiver();
 
         void init();
 };
@@ -44,4 +44,4 @@ class TCPReceiver {
 } // namespace vss_furgbol
 
 
-#endif // TCP_RECEIVER_H
+#endif // RECEIVER_H

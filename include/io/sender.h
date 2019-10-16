@@ -1,8 +1,8 @@
 // ® Copyright FURGBot 2019
 
 
-#ifndef SERIAL_SENDER_H
-#define SERIAL_SENDER_H
+#ifndef SENDER_H
+#define SENDER_H
 
 
 #include "Communications/CommandSender.h"
@@ -18,7 +18,7 @@
 namespace vss_furgbol {
 namespace io {
 
-class SerialSender {
+class Sender {
     private:
         boost::asio::streambuf buf_;
         boost::asio::io_service io_service_;
@@ -70,8 +70,8 @@ class SerialSender {
         void errorCorrector();
         
     public:
-        SerialSender(int execution_mode, int team_color_, bool *running, bool *changed, bool *gk_is_running, bool *cb_is_running, bool *st_is_running, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue);
-        ~SerialSender();
+        Sender(int execution_mode, int team_color_, bool *running, bool *changed, bool *gk_is_running, bool *cb_is_running, bool *st_is_running, std::queue<std::vector<uint8_t>> *gk_sending_queue, std::queue<std::vector<uint8_t>> *cb_sending_queue, std::queue<std::vector<uint8_t>> *st_sending_queue);
+        ~Sender();
 
         void init();
 };
@@ -80,4 +80,4 @@ class SerialSender {
 } // namespace vss_furgbol
 
 
-#endif // SERIAL_SENDER_H
+#endif // SENDER_H

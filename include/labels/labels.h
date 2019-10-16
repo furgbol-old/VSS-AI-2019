@@ -7,8 +7,20 @@
 
 namespace vss_furgbol {
 
+enum BufferLabels {
+    ROBOT_ID, LINEAR_VELOCITY, ANGULAR_VELOCITY, LINEAR_DIRECTION, ANGULAR_DIRECTION
+};
+
+enum DirectionsLabels {
+    NEGATIVE = 1, POSITIVE = 3
+};
+
 enum ExecutionModeLabels {
     REAL, SIMULATION
+};
+
+enum OutOfPlaceLabels {
+    NO, BEHIND, AHEAD
 };
 
 enum RoleLabels {
