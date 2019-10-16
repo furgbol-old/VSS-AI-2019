@@ -24,6 +24,10 @@ set(VSS_CORE libvss-core.so)
 add_library(vss-testing-srcs
             ${SRCS})
 
+target_link_libraries(vss-testing-srcs
+                        "${CMAKE_SOURCE_DIR}/lib/furgbol-core/dist/lib/libfurgbol-core-io.a"
+                        serial)
+
 add_executable(testing "src/main.cpp")
 
 target_link_libraries(testing

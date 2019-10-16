@@ -148,7 +148,7 @@ void System::startSerialSender() {
         if (gk_is_running_ || cb_is_running_ || st_is_running_) {
             serial_is_running_ = true;
             serial_changed_ = false;
-            serial_sender_ = new io::Sender(&serial_is_running_, &serial_changed_, &gk_is_running_, &cb_is_running_, &st_is_running_, max_robots_velocity_, execution_mode_, team_color_, gk_operator_->sending_queue, cb_operator_->sending_queue, st_operator_->sending_queue);
+            serial_sender_ = new io::Sender(&serial_is_running_, &serial_changed_, &gk_is_running_, &cb_is_running_, &st_is_running_, max_robots_velocity_, execution_mode_, team_color_, &gk_operator_->sending_queue, &cb_operator_->sending_queue, &st_operator_->sending_queue);
             serial_thread_ = std::thread(&io::Sender::init, serial_sender_);
             while (!serial_changed_);
         } else {
@@ -264,13 +264,14 @@ void System::configure() {
     }
     if (configured_) std::cout << "-> Execution mode: " << std::string(json_file["execution mode"]) << std::endl;
 
-    std::cout << "Max robots velocity: " << max_robots_velocity_ << std::endl;
+    std::cout << "-> Max robots velocity: " << max_robots_velocity_ << std::endl;
 }
 
 void System::exec() {
     int option;
 
     do {
+        std::cin.clear();
         std::cout << std::endl << std::endl;
         std::cout << "\t ------ Furgbol VSS System ----- " << std::endl;
         std::cout << "[1] - Start";
@@ -306,6 +307,7 @@ void System::exec() {
         std::cout << "[0] - Close System" << std::endl;
         std::cout << "---> ";
         std::cin >> option;
+        std::cin.clear();
         
         clearScreen();
 
@@ -327,7 +329,6 @@ void System::exec() {
                 break;
             case 3:
                 startGKOperator();
-                startSerialSender();
                 break;
             case 4:
                 startCBOperator();

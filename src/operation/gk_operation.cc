@@ -77,50 +77,36 @@ void GKOperation::printConfigurations() {
 
 void GKOperation::exec() {
     bool previous_status = false;
-    while (true) {
-        while (*running_) {
-            if (previous_status == false) {
-                {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    *changed_ = true;
-                }
-            }
-            verifyPosition();
-            setTarget();
-            setMotion();
-            serialize();
-
-            /*{
+    while (*running_) {
+        if (previous_status == false) {
+            {
                 std::lock_guard<std::mutex> lock(mutex_);
-                std::cout << *ball_ << std::endl;
-                std::cout << *robot_ << std::endl;
-            }*/
-            // switch (out_of_place_) {
-            //     case NO:
-            //         std::cout << "In the right place!" << std::endl;
-            //         break;
-            //     case AHEAD:
-            //         std::cout << "Ahead!" << std::endl;
-            //         break;
-            //     case BEHIND:
-            //         std::cout << "Behind!" << std::endl;
-            //         break;
-            // }
-            //std::cout << "Target Position: (" << target_.x << ", " << target_.y << ")" << std::endl;
-            //std::cout << "Target Angle: " << target_angle_ << std::endl;
-        }
-
-        if (!*running_) {
-            end();
-            if (previous_status == true) {
-                previous_status = false;
-                {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    *changed_ = true;
-                }
+                *changed_ = true;
             }
-            break;
         }
+        verifyPosition();
+        setTarget();
+        setMotion();
+        serialize();
+
+        /*{
+            std::lock_guard<std::mutex> lock(mutex_);
+            std::cout << *ball_ << std::endl;
+            std::cout << *robot_ << std::endl;
+        }*/
+        // switch (out_of_place_) {
+        //     case NO:
+        //         std::cout << "In the right place!" << std::endl;
+        //         break;
+        //     case AHEAD:
+        //         std::cout << "Ahead!" << std::endl;
+        //         break;
+        //     case BEHIND:
+        //         std::cout << "Behind!" << std::endl;
+        //         break;
+        // }
+        //std::cout << "Target Position: (" << target_.x << ", " << target_.y << ")" << std::endl;
+        //std::cout << "Target Angle: " << target_angle_ << std::endl;
     }
 }
 
