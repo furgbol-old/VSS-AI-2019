@@ -12,10 +12,11 @@
 namespace vss_furgbol {
 namespace io {
 
-Sender::Sender(bool *running, bool *changed, int execution_mode, int team_color, std::queue<std::vector<uint8_t>> &gk_sending_queue, std::queue<std::vector<uint8_t>> &cb_sending_queue, std::queue<std::vector<uint8_t>> &st_sending_queue) :
+Sender::Sender(bool *running, bool *changed, bool *gk_is_running, bool *cb_is_running, bool *st_is_running, int max_velocity, int execution_mode, int team_color, std::queue<std::vector<uint8_t>> &gk_sending_queue, std::queue<std::vector<uint8_t>> &cb_sending_queue, std::queue<std::vector<uint8_t>> &st_sending_queue) :
     running_(running), changed_(changed), execution_mode_(execution_mode), team_color_(team_color),
     gk_sending_queue_(gk_sending_queue), cb_sending_queue_(cb_sending_queue), st_sending_queue_(st_sending_queue),
-    which_queue_(GK) {}
+    which_queue_(GK), max_velocity_(max_velocity), gk_is_running_(gk_is_running), cb_is_running_(cb_is_running),
+    st_is_running_(st_is_running) {}
 
 Sender::~Sender() {}
 
@@ -93,7 +94,18 @@ void Sender::printConfigurations() {
 void Sender::send() {
     switch (execution_mode_) {
         case REAL:
-            serial_writer_->write();
+            serial_writer_->write(buffer_to_send_);
+            break;
+        case SIMULATION:
+            if (buffer_to_send_.empty()) command_.commands.push_back(vss::WheelsCommand(0, 0));
+            else {
+                float linear_velocity = (50 * (float)buffer_to_send_[LINEAR_VELOCITY] / max_velocity_) * (buffer_to_send_[LINEAR_DIRECTION] - 2);
+                float angular_velocity = (50 * (float)buffer_to_send_[ANGULAR_VELOCITY] / max_velocity_) * (buffer_to_send_[ANGULAR_DIRECTION] - 2);
+                float right_velocity = ((linear_velocity / 0.03) + ((angular_velocity * 0.04) / 0.03));
+                float left_velocity = ((linear_velocity / 0.03) - ((angular_velocity * 0.04) / 0.03));
+                command_.commands.push_back(vss::WheelsCommand(right_velocity, left_velocity));
+            }
+            break;
     }
 }
 

@@ -74,9 +74,9 @@ void System::startGKOperator() {
             gk_is_running_ = true;
             gk_changed_ = false;
             if (team_color_ == BLUE)
-                gk_operator_ = new operation::GKOperation(&gk_is_running_, &gk_changed_, &world_model_->ball, &world_model_->team_blue[GK], side_);
+                gk_operator_ = new operation::GKOperation(&gk_is_running_, &gk_changed_, &world_model_->ball, &world_model_->team_blue[GK], side_, max_robots_velocity_);
             else if (team_color_ == YELLOW)
-                gk_operator_ = new operation::GKOperation(&gk_is_running_, &gk_changed_, &world_model_->ball, &world_model_->team_yellow[GK], side_);
+                gk_operator_ = new operation::GKOperation(&gk_is_running_, &gk_changed_, &world_model_->ball, &world_model_->team_yellow[GK], side_, max_robots_velocity_);
             gk_thread_ = std::thread(&operation::GKOperation::init, gk_operator_);
             while (!gk_changed_);
         } else {
@@ -99,9 +99,9 @@ void System::startCBOperator() {
             cb_is_running_ = true;
             cb_changed_ = false;
             if (team_color_ == BLUE)
-                cb_operator_ = new operation::CBOperation(&cb_is_running_, &cb_changed_, &world_model_->ball, &world_model_->team_blue[CB], side_);
+                cb_operator_ = new operation::CBOperation(&cb_is_running_, &cb_changed_, &world_model_->ball, &world_model_->team_blue[CB], side_, max_robots_velocity_);
             else if (team_color_ == YELLOW)
-                cb_operator_ = new operation::CBOperation(&cb_is_running_, &cb_changed_, &world_model_->ball, &world_model_->team_yellow[CB], side_);
+                cb_operator_ = new operation::CBOperation(&cb_is_running_, &cb_changed_, &world_model_->ball, &world_model_->team_yellow[CB], side_, max_robots_velocity_);
             cb_thread_ = std::thread(&operation::CBOperation::init, cb_operator_);
             while (!cb_changed_);
         } else {
@@ -124,9 +124,9 @@ void System::startSTOperator() {
             st_is_running_ = true;
             st_changed_ = false;
             if (team_color_ == BLUE)
-                st_operator_ = new operation::STOperation(&st_is_running_, &st_changed_, &world_model_->ball, &world_model_->team_blue[ST], side_);
+                st_operator_ = new operation::STOperation(&st_is_running_, &st_changed_, &world_model_->ball, &world_model_->team_blue[ST], side_, max_robots_velocity_);
             else if (team_color_ == YELLOW)
-                st_operator_ = new operation::STOperation(&st_is_running_, &st_changed_, &world_model_->ball, &world_model_->team_yellow[ST], side_);
+                st_operator_ = new operation::STOperation(&st_is_running_, &st_changed_, &world_model_->ball, &world_model_->team_yellow[ST], side_, max_robots_velocity_);
             st_thread_ = std::thread(&operation::STOperation::init, st_operator_);
             while (!st_changed_);
         } else {
@@ -148,7 +148,7 @@ void System::startSerialSender() {
         if (gk_is_running_ || cb_is_running_ || st_is_running_) {
             serial_is_running_ = true;
             serial_changed_ = false;
-            serial_sender_ = new io::Sender(execution_mode_, team_color_, &serial_is_running_, &serial_changed_, &gk_is_running_, &cb_is_running_, &st_is_running_, &gk_operator_->sending_queue, &cb_operator_->sending_queue, &st_operator_->sending_queue);
+            serial_sender_ = new io::Sender(&serial_is_running_, &serial_changed_, &gk_is_running_, &cb_is_running_, &st_is_running_, max_robots_velocity_, execution_mode_, team_color_, gk_operator_->sending_queue, cb_operator_->sending_queue, st_operator_->sending_queue);
             serial_thread_ = std::thread(&io::Sender::init, serial_sender_);
             while (!serial_changed_);
         } else {
@@ -238,6 +238,8 @@ void System::configure() {
     nlohmann::json json_file;
     ifstream >> json_file;
 
+    max_robots_velocity_ = json_file["max robots velocity"];
+
     if (json_file["team color"] == "blue") team_color_ = BLUE;
     else if (json_file["team color"] == "yellow") team_color_ = YELLOW;
     else {
@@ -261,6 +263,8 @@ void System::configure() {
         configured_ = false;
     }
     if (configured_) std::cout << "-> Execution mode: " << std::string(json_file["execution mode"]) << std::endl;
+
+    std::cout << "Max robots velocity: " << max_robots_velocity_ << std::endl;
 }
 
 void System::exec() {

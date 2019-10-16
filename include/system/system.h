@@ -24,6 +24,7 @@ class System {
         int team_color_;
         int side_;
         int execution_mode_;
+        int max_robots_velocity_;
         bool configured_;
 
         world_model::WorldModel *world_model_;

@@ -71,7 +71,7 @@ class GKOperation {
     public:
         std::queue<std::vector<uint8_t>> sending_queue;
 
-        GKOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side);
+        GKOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side, int max_velocity);
         ~GKOperation();
 
         void init();

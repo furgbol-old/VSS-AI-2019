@@ -71,7 +71,7 @@ class STOperation {
     public:
         std::queue<std::vector<uint8_t>> sending_queue;
 
-        STOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side);
+        STOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side, int max_velocity);
         ~STOperation();
 
         void init();

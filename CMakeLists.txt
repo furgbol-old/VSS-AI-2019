@@ -5,7 +5,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 include_directories("${CMAKE_SOURCE_DIR}/include"
                     "${CMAKE_SOURCE_DIR}/lib"
-                    "${CMAKE_SOURCE_DIR}/ext/furgbol-core/dist/include")
+                    "${CMAKE_SOURCE_DIR}/lib/furgbol-core/dist/include")
 
 set(SRCS
     "src/geometry/field_line.cc"

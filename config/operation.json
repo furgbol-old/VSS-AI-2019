@@ -8,7 +8,6 @@
     "robots": {
         "goalkeeper": {
             "id": 1,
-            "max velocity": 40,
             "max ball distance": 12,
             "field line": {
                 "x": 16,
@@ -19,7 +18,6 @@
 
         "centerback": {
             "id": 2,
-            "max velocity": 50,
             "max ball distance": 15,
             "field line": {
                 "x": 35,
@@ -30,7 +28,6 @@
 
         "striker": {
             "id": 3,
-            "max velocity": 50,
             "max ball distance": 15,
             "field line": {
                 "x": 95,

@@ -71,7 +71,7 @@ class CBOperation {
     public:
         std::queue<std::vector<uint8_t>> sending_queue;
 
-        CBOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side);
+        CBOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side, int max_velocity);
         ~CBOperation();
 
         void init();

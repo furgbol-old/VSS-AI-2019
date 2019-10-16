@@ -11,8 +11,8 @@
 namespace vss_furgbol {
 namespace operation {
 
-STOperation::STOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side) :
-    ball_(ball), robot_(robot), side_(side), sending_queue(), running_(running), changed_(changed) {}
+STOperation::STOperation(bool *running, bool *changed, vss::Ball *ball, world_model::Robot *robot, int side, int max_velocity) :
+    ball_(ball), robot_(robot), side_(side), sending_queue(), running_(running), changed_(changed), max_velocity_(max_velocity) {}
 
 STOperation::~STOperation() {}
 
@@ -41,7 +41,6 @@ void STOperation::configure() {
     error_threshold_ = json_file["error threshold"];
 
     robot_->id = json_file["robots"]["striker"]["id"];
-    max_velocity_ = json_file["robots"]["striker"]["max velocity"];
     max_ball_distance_ = json_file["robots"]["striker"]["max ball distance"];
 
     switch (side_) {

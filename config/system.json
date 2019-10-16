@@ -1,5 +1,6 @@
 {
     "team color": "yellow",
     "side": "left",
-    "execution mode": "real"
+    "execution mode": "real",
+    "max robots velocity": 50
 }
