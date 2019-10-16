@@ -87,36 +87,33 @@ void GKOperation::exec() {
                     *changed_ = true;
                 }
             }
+            verifyPosition();
+            setTarget();
+            setMotion();
+            serialize();
+
             /*{
                 std::lock_guard<std::mutex> lock(mutex_);
                 std::cout << *ball_ << std::endl;
                 std::cout << *robot_ << std::endl;
             }*/
-
-            verifyPosition();
-            /*switch (out_of_place_) {
-                case NO:
-                    std::cout << "In the right place!" << std::endl;
-                    break;
-                case AHEAD:
-                    std::cout << "Ahead!" << std::endl;
-                    break;
-                case BEHIND:
-                    std::cout << "Behind!" << std::endl;
-                    break;
-            }*/
-
-            setTarget();
+            // switch (out_of_place_) {
+            //     case NO:
+            //         std::cout << "In the right place!" << std::endl;
+            //         break;
+            //     case AHEAD:
+            //         std::cout << "Ahead!" << std::endl;
+            //         break;
+            //     case BEHIND:
+            //         std::cout << "Behind!" << std::endl;
+            //         break;
+            // }
             //std::cout << "Target Position: (" << target_.x << ", " << target_.y << ")" << std::endl;
             //std::cout << "Target Angle: " << target_angle_ << std::endl;
-
-            setMotion();
-            serialize();
         }
 
         if (!*running_) {
             end();
-            
             if (previous_status == true) {
                 previous_status = false;
                 {
@@ -124,7 +121,6 @@ void GKOperation::exec() {
                     *changed_ = true;
                 }
             }
-
             break;
         }
     }
@@ -189,12 +185,14 @@ void GKOperation::setMotion() {
 
     linear_velocity_ = 0;
     angular_velocity_ = 0;
+    linear_direction_ = 0;
+    angular_direction_ = 0;
 
     if (canKick(robot_x, robot_y, ball_x, ball_y)) {
-        //std::cout << "Robot can kick!" << std::endl;
+        //std::cout << "Robot can kick";
         setKick(robot_y, ball_y);
     } else if (outOfAngle(robot_angle)) {
-        //std::cout << "Robot is out of angle!" << std::endl;
+        //std::cout << "Robot is out of angle! Have to turn";
         fixesAngle(robot_angle);
     } else if ((target_angle_ != 90) && (out_of_place_ == NO)) {
         //std::cout << "Robot have to get back to 90 degrees." << std::endl;
@@ -203,7 +201,7 @@ void GKOperation::setMotion() {
         angular_velocity_ = 0;
     } else if (outOfTarget(robot_x, robot_y, ball_x, ball_y)) {
         goToTarget(robot_x, robot_y, ball_x, ball_y);
-        //std::cout << "Robot is out of target." << std::endl;
+        //std::cout << "Robot is out of target. Have to run";
     } else {
         //std::cout << "Robot is on the right place." << std::endl;
     }
@@ -214,7 +212,7 @@ void GKOperation::serialize() {
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        buffer_to_send_[ROBOT_ID] = (uint8_t)(robot_->id + 128);
+        buffer_to_send_[ROBOT_ID] = (uint8_t)robot_->id;
     }
     buffer_to_send_[LINEAR_VELOCITY] = (uint8_t)linear_velocity_;
     buffer_to_send_[ANGULAR_VELOCITY] = (uint8_t)angular_velocity_;
@@ -226,6 +224,14 @@ void GKOperation::serialize() {
         if (sending_queue.size() == max_queue_size_) sending_queue.pop();
         sending_queue.push(buffer_to_send_);
     }
+
+    // std::cout << "Have to send: {" << std::endl;
+    // std::cout << "\tRobot ID: " << (int)sending_queue.front()[ROBOT_ID] << std::endl;
+    // std::cout << "\tLinear Velocity:" << (int)sending_queue.front()[LINEAR_VELOCITY] << std::endl;
+    // std::cout << "\tAngular Velocity: " << (int)sending_queue.front()[ANGULAR_VELOCITY] << std::endl;
+    // std::cout << "\tLinear Direction: " << (int)sending_queue.front()[LINEAR_DIRECTION] << std::endl;
+    // std::cout << "\tAngular Direction: " << (int)sending_queue.front()[ANGULAR_DIRECTION] << std::endl;
+    // std::cout << "}" << std::endl;
 }
 
 bool GKOperation::canKick(float robot_x, float robot_y, float ball_x, float ball_y) {
@@ -259,12 +265,23 @@ void GKOperation::setKick(float robot_y, float ball_y) {
     
     switch (side_) {
         case LEFT:
-            if (ball_y > robot_y) angular_direction_ = POSITIVE;
-            else angular_direction_ = NEGATIVE;
+            if (ball_y > robot_y) {
+                angular_direction_ = POSITIVE;
+                //std::cout << " in counterclockwise." << std::endl;
+            } else {
+                angular_direction_ = NEGATIVE;
+                //std::cout << " in clockwise." << std::endl;
+            }
             break;
         case RIGHT:
-            if (ball_y > robot_y) angular_direction_ = NEGATIVE;
-            else angular_direction_ = POSITIVE;
+            if (ball_y < robot_y) {
+                angular_direction_ = POSITIVE;
+                //std::cout << " in counterclockwise." << std::endl;
+            } else {
+                angular_direction_ = NEGATIVE;
+                //std::cout << " in clockwise." << std::endl;
+            }
+            break;
     }
 }
 
@@ -272,23 +289,33 @@ void GKOperation::fixesAngle(float robot_angle) {
     linear_velocity_ = 0;
     angular_velocity_ = velocity_gain_ * abs(robot_angle - target_angle_);
     if (angular_velocity_ > max_velocity_) angular_velocity_ = max_velocity_;
-    if (robot_angle < target_angle_) angular_direction_ = NEGATIVE;
-    else if (robot_angle > target_angle_) angular_direction_ = POSITIVE;
+
+    //std::cout << " with angular velocity = " << angular_velocity_;
+    if (robot_angle < target_angle_) {
+        angular_direction_ = NEGATIVE;
+        //std::cout << " in clockwise." << std::endl;
+    } else if (robot_angle > target_angle_) {
+        angular_direction_ = POSITIVE;
+        //std::cout << " in counterclockwise." << std::endl;
+    }
 }
 
 void GKOperation::goToTarget(float robot_x, float robot_y, float ball_x, float ball_y) {
     angular_velocity_ = 0;
     if (out_of_place_ == NO) {
-        linear_velocity_ = (int)(velocity_gain_ * abs(robot_->y - target_.y));
+        linear_velocity_ = (int)(velocity_gain_ * abs(robot_y - target_.y));
         if (linear_velocity_ > max_velocity_) linear_velocity_ = max_velocity_;
-        if (robot_->y < target_.y) linear_direction_ = NEGATIVE;
-        else if (robot_->y > target_.y) linear_direction_ = POSITIVE;
+        if (robot_y > target_.y) linear_direction_ = NEGATIVE;
+        else if (robot_y < target_.y) linear_direction_ = POSITIVE;
     } else {
-        linear_velocity_ = (int)(velocity_gain_ * abs(robot_->x - target_.x));
+        linear_velocity_ = (int)(velocity_gain_ * abs(robot_x - target_.x));
         if (linear_velocity_ > max_velocity_) linear_velocity_ = max_velocity_;
-        if (out_of_place_ == BEHIND) linear_direction_ = POSITIVE;
-        else if (out_of_place_ == AHEAD) linear_direction_ = NEGATIVE;
+        linear_direction_ = POSITIVE;
     }
+
+    // std::cout << " with linear velocity = " << linear_velocity_;
+    // if (linear_direction_ == POSITIVE) std::cout << " forward." << std::endl;
+    // if (linear_direction_ == NEGATIVE) std::cout << " back." << std::endl;
 }
 
 } // namespace operation

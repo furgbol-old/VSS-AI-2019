@@ -1,5 +1,4 @@
-
 {
-    "port name": "/dev/ttyUSB0",
+    "port name": "/dev/ttyACM0",
     "sending frequency": 200
 }

@@ -3,7 +3,7 @@
 
     "velocity gain": 3,
 
-    "error threshold": 10,
+    "error threshold": 3,
 
     "robots": {
         "goalkeeper": {
@@ -11,7 +11,7 @@
             "max velocity": 40,
             "max ball distance": 12,
             "field line": {
-                "x": 13,
+                "x": 16,
                 "min y": 50,
                 "max y": 80
             }

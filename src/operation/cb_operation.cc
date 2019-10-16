@@ -85,7 +85,6 @@ void CBOperation::exec() {
                     *changed_ = true;
                 }
             }
-
             verifyPosition();
             setTarget();
             setMotion();
@@ -94,7 +93,6 @@ void CBOperation::exec() {
 
         if (!*running_) {
             end();
-            
             if (previous_status == true) {
                 previous_status = false;
                 {
@@ -102,13 +100,14 @@ void CBOperation::exec() {
                     *changed_ = true;
                 }
             }
-
             break;
         }
     }
 }
 
-void CBOperation::end() {}
+void CBOperation::end() {
+    std::cout << "[STATUS]: Closing Centerback operation..." << std::endl;
+}
 
 void CBOperation::verifyPosition() {
     float robot_x;
@@ -117,32 +116,50 @@ void CBOperation::verifyPosition() {
         robot_x = robot_->x;
     }
     float line_x = field_line_.getX();
-    //std::cout << "Robot X: " << robot_x << std::endl;
-    //std::cout << "Line X: " << line_x << std::endl;
 
     if ((robot_x >= line_x - error_threshold_) && (robot_x <= line_x + error_threshold_)) out_of_place_ = NO;
     else if (robot_x > line_x + error_threshold_) out_of_place_ = AHEAD;
     else if (robot_x < line_x - error_threshold_) out_of_place_ = BEHIND;
 }
 
+
 void CBOperation::setTarget() {
+    float robot_x, robot_y, ball_x, ball_y;
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        robot_x = robot_->x;
+        robot_y = robot_->y;
+        ball_x = ball_->x;
+        ball_y = ball_->y; 
+    }
+
     if (out_of_place_ == NO) {
         target_angle_ = 90;
-        target_.x = robot_->x;
-        target_.y = geometry::Vector2D(
-            vss::Point(10, 65),
-            vss::Point(ball_->x, ball_->y)
-        ).getReferentY(robot_->x);
+        target_.x = robot_x;
+        switch (side_) {
+            case LEFT:
+                target_.y = geometry::Vector2D(
+                    vss::Point(10, 65),
+                    vss::Point(ball_x, ball_y)
+                ).getReferentY(robot_x);
+                break;
+            case RIGHT:
+                target_.y = geometry::Vector2D(
+                    vss::Point(160, 65),
+                    vss::Point(ball_x, ball_y)
+                ).getReferentY(robot_x);
+                break;
+        }
         if (target_.y < field_line_.getMinY()) target_.y = field_line_.getMinY();
         else if (target_.y > field_line_.getMaxY()) target_.y = field_line_.getMaxY();
     } else {
         target_.x = field_line_.getX();
-        target_.y = robot_->y;
+        target_.y = robot_y;
         if (out_of_place_ == BEHIND) target_angle_ = 0;
         else if (out_of_place_ == AHEAD) target_angle_ = 180;
     }
 }
-
 
 void CBOperation::setMotion() {
     float robot_x, robot_y, robot_angle, ball_x, ball_y;
@@ -158,6 +175,8 @@ void CBOperation::setMotion() {
 
     linear_velocity_ = 0;
     angular_velocity_ = 0;
+    linear_direction_ = 0;
+    angular_direction_ = 0;
 
     if (canKick(robot_x, robot_y, ball_x, ball_y)) setKick(robot_y, ball_y);
     else if (outOfAngle(robot_angle)) fixesAngle(robot_angle);
@@ -165,8 +184,7 @@ void CBOperation::setMotion() {
         target_angle_ = 90;
         linear_velocity_ = 0;
         angular_velocity_ = 0;
-    } else if (outOfTarget(robot_x, robot_y, ball_x, ball_y))
-        goToTarget(robot_x, robot_y, ball_x, ball_y);
+    } else if (outOfTarget(robot_x, robot_y, ball_x, ball_y)) goToTarget(robot_x, robot_y, ball_x, ball_y);
 }
 
 void CBOperation::serialize() {
@@ -174,7 +192,7 @@ void CBOperation::serialize() {
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        buffer_to_send_[ROBOT_ID] = (uint8_t)(robot_->id + 128);
+        buffer_to_send_[ROBOT_ID] = (uint8_t)robot_->id;
     }
     buffer_to_send_[LINEAR_VELOCITY] = (uint8_t)linear_velocity_;
     buffer_to_send_[ANGULAR_VELOCITY] = (uint8_t)angular_velocity_;
@@ -183,7 +201,7 @@ void CBOperation::serialize() {
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (sending_queue.size() >= max_queue_size_) sending_queue.pop();
+        if (sending_queue.size() == max_queue_size_) sending_queue.pop();
         sending_queue.push(buffer_to_send_);
     }
 }
@@ -198,7 +216,14 @@ bool CBOperation::canKick(float robot_x, float robot_y, float ball_x, float ball
 }
 
 bool CBOperation::outOfAngle(float robot_angle) {
-    return ((target_angle_ < (robot_angle - error_threshold_)) || ((target_angle_ > (robot_angle + error_threshold_))));
+    if (target_angle_ == 0) {
+        if ((robot_angle < (360 - error_threshold_)) || (robot_angle > (target_angle_ + error_threshold_)))
+            return true;
+        else
+            return false;
+        
+    } else
+        return ((robot_angle < (target_angle_ - error_threshold_)) || ((robot_angle > (target_angle_ + error_threshold_))));
 }
 
 bool CBOperation::outOfTarget(float robot_x, float robot_y, float ball_x, float ball_y) {
@@ -216,31 +241,32 @@ void CBOperation::setKick(float robot_y, float ball_y) {
             else angular_direction_ = NEGATIVE;
             break;
         case RIGHT:
-            if (ball_y > robot_y) angular_direction_ = NEGATIVE;
-            else angular_direction_ = POSITIVE;
+            if (ball_y < robot_y) angular_direction_ = POSITIVE;
+            else angular_direction_ = NEGATIVE;
+            break;
     }
 }
 
 void CBOperation::fixesAngle(float robot_angle) {
     linear_velocity_ = 0;
-    angular_velocity_ = velocity_gain_ * abs(robot_->angle - target_angle_);
+    angular_velocity_ = velocity_gain_ * abs(robot_angle - target_angle_);
     if (angular_velocity_ > max_velocity_) angular_velocity_ = max_velocity_;
-    if (robot_->angle < target_angle_) angular_direction_ = NEGATIVE;
-    if (robot_->angle > target_angle_) angular_direction_ = POSITIVE;
+
+    if (robot_angle < target_angle_) angular_direction_ = NEGATIVE;
+    else if (robot_angle > target_angle_) angular_direction_ = POSITIVE;
 }
 
 void CBOperation::goToTarget(float robot_x, float robot_y, float ball_x, float ball_y) {
     angular_velocity_ = 0;
     if (out_of_place_ == NO) {
-        linear_velocity_ = (int)(velocity_gain_ * abs(robot_->y - target_.y));
+        linear_velocity_ = (int)(velocity_gain_ * abs(robot_y - target_.y));
         if (linear_velocity_ > max_velocity_) linear_velocity_ = max_velocity_;
-        if (robot_->y < target_.y) linear_direction_ = NEGATIVE;
-        else if (robot_->y > target_.y) linear_direction_ = POSITIVE;
+        if (robot_y > target_.y) linear_direction_ = NEGATIVE;
+        else if (robot_y < target_.y) linear_direction_ = POSITIVE;
     } else {
-        linear_velocity_ = (int)(velocity_gain_ * abs(robot_->x - target_.x));
+        linear_velocity_ = (int)(velocity_gain_ * abs(robot_x - target_.x));
         if (linear_velocity_ > max_velocity_) linear_velocity_ = max_velocity_;
-        if (out_of_place_ == BEHIND) linear_direction_ = POSITIVE;
-        else if (out_of_place_ == AHEAD) linear_direction_ = NEGATIVE;
+        linear_direction_ = POSITIVE;
     }
 }
 
