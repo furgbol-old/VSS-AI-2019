@@ -3,11 +3,9 @@ project(vss-testing)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") 
 
-find_package(Boost REQUIRED COMPONENTS system)
-
 include_directories("${CMAKE_SOURCE_DIR}/include"
                     "${CMAKE_SOURCE_DIR}/lib"
-                    ${Boost_INCLUDE_DIRS})
+                    "${CMAKE_SOURCE_DIR}/ext/furgbol-core/dist/include")
 
 set(SRCS
     "src/geometry/field_line.cc"
@@ -30,5 +28,4 @@ add_executable(testing "src/main.cpp")
 
 target_link_libraries(testing
                         vss-testing-srcs
-                        ${VSS_CORE}
-                        ${Boost_LIBRARIES})
+                        ${VSS_CORE})
