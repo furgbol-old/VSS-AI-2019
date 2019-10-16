@@ -93,7 +93,7 @@ void Sender::printConfigurations() {
 void Sender::send() {
     switch (execution_mode_) {
         case REAL:
-            serial_writer_->write
+            serial_writer_->write();
     }
 }
 
