@@ -1,1 +1,0 @@
-/usr/bin/g++-7   -pthread -g   CMakeFiles/testing.dir/src/main.cpp.o  -o testing libvss-testing-srcs.a -lvss-core /usr/local/lib/libboost_system.so.1.71.0 

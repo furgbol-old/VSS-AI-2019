@@ -1,4 +1,0 @@
-/home/miguel/Workspaces/furgbol/vss/VSS-AI/build/CMakeFiles/rebuild_cache.dir
-/home/miguel/Workspaces/furgbol/vss/VSS-AI/build/CMakeFiles/edit_cache.dir
-/home/miguel/Workspaces/furgbol/vss/VSS-AI/build/CMakeFiles/vss-testing-srcs.dir
-/home/miguel/Workspaces/furgbol/vss/VSS-AI/build/CMakeFiles/testing.dir
