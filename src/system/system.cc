@@ -33,6 +33,8 @@ void System::init() {
         serial_is_running_ = false;
 
         startTCPReceiver();
+        startGKOperator();
+        //startSerialSender();
 
         exec();
     } else std::cout << "[SYSTEM ERROR]: System configuration failed!" << std::endl;
@@ -268,102 +270,7 @@ void System::configure() {
 }
 
 void System::exec() {
-    int option;
-
-    do {
-        std::cin.clear();
-        std::cout << std::endl << std::endl;
-        std::cout << "\t ------ Furgbol VSS System ----- " << std::endl;
-        std::cout << "[1] - Start";
-        switch (execution_mode_) {
-            case REAL:
-                std::cout << " Vision ";
-                break;
-            case SIMULATION:
-                std::cout << " Simulation ";
-                break;
-        }
-        std::cout << "Receiver" << std::endl;
-        std::cout << "[2] - Start All Operators" << std::endl;
-        std::cout << "[3] - Start Goalkeeper Operator" << std::endl;
-        std::cout << "[4] - Start Centerback Operator" << std::endl;
-        std::cout << "[5] - Start Striker Operator" << std::endl;
-        std::cout << "[6] - Start Robots Movimentation (Serial Sender)" << std::endl;
-        std::cout << "[7] - Pause";
-        switch (execution_mode_) {
-            case REAL:
-                std::cout << " Vision ";
-                break;
-            case SIMULATION:
-                std::cout << " Simulation ";
-                break;
-        }
-        std::cout << "Receiver" << std::endl;
-        std::cout << "[8] - Pause All Operators" << std::endl;
-        std::cout << "[9] - Pause Goalkeeper Operator" << std::endl;
-        std::cout << "[10] - Pause Centerback Operator" << std::endl;
-        std::cout << "[11] - Pause Striker Operator" << std::endl;
-        std::cout << "[12] - Pause Robots Movimentation (Serial Sender)" << std::endl;
-        std::cout << "[0] - Close System" << std::endl;
-        std::cout << "---> ";
-        std::cin >> option;
-        std::cin.clear();
-        
-        clearScreen();
-
-        switch (option) {
-            case 0:
-                if (tcp_is_running_) stopTCPReceiver();
-                if (gk_is_running_) stopGKOperator();
-                if (cb_is_running_) stopCBOperator();
-                if (st_is_running_) stopSTOperator();
-                if (serial_is_running_) stopSerialSender();
-                break;
-            case 1:
-                startTCPReceiver();
-                break;
-            case 2:
-                startGKOperator();
-                startCBOperator();
-                startSTOperator();
-                break;
-            case 3:
-                startGKOperator();
-                break;
-            case 4:
-                startCBOperator();
-                break;
-            case 5:
-                startSTOperator();
-                break;
-            case 6:
-                startSerialSender();
-                break;
-            case 7:
-                stopTCPReceiver();
-                break;
-            case 8:
-                stopGKOperator();
-                stopCBOperator();
-                stopSTOperator();
-                break;
-            case 9:
-                stopGKOperator();
-                break;
-            case 10:
-                stopCBOperator();
-                break;
-            case 11:
-                stopSTOperator();
-                break;
-            case 12:
-                stopSerialSender();
-                break;
-            default:
-                std::cout << "[SYSTEM ERROR]: Please, select a valid option!" << std::endl;
-                break;
-        }
-    } while (option != 0);
+    while (true);
 }
 
 void System::end() { std::cout << "[STATUS]: Closing system..." << std::endl; }

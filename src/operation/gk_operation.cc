@@ -85,25 +85,25 @@ void GKOperation::exec() {
             }
         }
         verifyPosition();
-        setTarget();
-        setMotion();
-        serialize();
+        switch (out_of_place_) {
+            case NO:
+                std::cout << "In the right place!" << std::endl;
+                break;
+            case AHEAD:
+                std::cout << "Ahead!" << std::endl;
+                break;
+            case BEHIND:
+                std::cout << "Behind!" << std::endl;
+                break;
+        }
+        //setTarget();
+        //setMotion();
+        //serialize();
 
-        /*{
-            std::lock_guard<std::mutex> lock(mutex_);
-            std::cout << *ball_ << std::endl;
-            std::cout << *robot_ << std::endl;
-        }*/
-        // switch (out_of_place_) {
-        //     case NO:
-        //         std::cout << "In the right place!" << std::endl;
-        //         break;
-        //     case AHEAD:
-        //         std::cout << "Ahead!" << std::endl;
-        //         break;
-        //     case BEHIND:
-        //         std::cout << "Behind!" << std::endl;
-        //         break;
+        // {
+        //     std::lock_guard<std::mutex> lock(mutex_);
+        //     std::cout << *ball_ << std::endl;
+        //     std::cout << *robot_ << std::endl;
         // }
         //std::cout << "Target Position: (" << target_.x << ", " << target_.y << ")" << std::endl;
         //std::cout << "Target Angle: " << target_angle_ << std::endl;
@@ -205,7 +205,7 @@ void GKOperation::serialize() {
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (sending_queue.size() == max_queue_size_) sending_queue.pop();
+        while (sending_queue.size() >= max_queue_size_) sending_queue.pop();
         sending_queue.push(buffer_to_send_);
     }
 

@@ -94,9 +94,10 @@ void Sender::printConfigurations() {
 void Sender::send() {
     switch (execution_mode_) {
         case REAL:
-            std::cout << "Trying to send" << std::endl;
+            //std::cout << buffer_to_send_.size() << std::endl;
+            //std::cout << "Trying to send" << std::endl;
             serial_writer_->write(buffer_to_send_);
-            std::cout << "Sent!" << std::endl;
+            //std::cout << "Sent!" << std::endl;
             break;
         case SIMULATION:
             if (buffer_to_send_.empty()) command_.commands.push_back(vss::WheelsCommand(0, 0));
@@ -106,33 +107,26 @@ void Sender::send() {
 }
 
 void Sender::calculateWheelsVelocity() {
-    float linear_velocity = (50 * (float)buffer_to_send_[LINEAR_VELOCITY] / max_velocity_) * (buffer_to_send_[LINEAR_DIRECTION] - 2);
-    float angular_velocity = (50 * (float)buffer_to_send_[ANGULAR_VELOCITY] / max_velocity_) * (buffer_to_send_[ANGULAR_DIRECTION] - 2);
+    float linear_velocity = (float)buffer_to_send_[LINEAR_VELOCITY] * (buffer_to_send_[LINEAR_DIRECTION] - 2);
+    float angular_velocity = (float)buffer_to_send_[ANGULAR_VELOCITY] * (buffer_to_send_[ANGULAR_DIRECTION] - 2);
     float right_velocity = ((linear_velocity / 0.03) + ((angular_velocity * 0.04) / 0.03));
     float left_velocity = ((linear_velocity / 0.03) - ((angular_velocity * 0.04) / 0.03));
     command_.commands.push_back(vss::WheelsCommand(right_velocity, left_velocity));
 }
 
 void Sender::exec() {
-    bool previous_status = false;
+    bool can_do_it;
     while (*running_) {
-        if (previous_status == false) {
-            previous_status = true;
-            {
-                std::lock_guard<std::mutex> lock(mutex_);
-                *changed_ = true;
-            }
-        }
-
+        can_do_it = false;
         buffer_to_send_.clear();
         switch (which_queue_) {
             case GK:
                 if (*gk_is_running_) {
-                    std::cout << "Goalkeeper is running!" << std::endl;
+                    //std::cout << "Goalkeeper is running!" << std::endl;
                     if (!gk_sending_queue_->empty()) {
-                        std::cout << "Goalkeeper sending queue is not empty!" << std::endl;
+                        //std::cout << "Goalkeeper sending queue is not empty!" << std::endl;
                         buffer_to_send_ = gk_sending_queue_->front();
-                        std::cout << "Buffer to send got!" << std::endl;
+                        //std::cout << "Buffer to send got!" << std::endl;
                         send();
                     }
                 }

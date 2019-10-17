@@ -199,7 +199,7 @@ void CBOperation::serialize() {
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (sending_queue.size() == max_queue_size_) sending_queue.pop();
+        while (sending_queue.size() == max_queue_size_) sending_queue.pop();
         sending_queue.push(buffer_to_send_);
     }
 }
