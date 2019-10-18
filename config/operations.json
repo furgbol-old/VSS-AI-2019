@@ -1,0 +1,49 @@
+{
+    "goalkeeper": {
+        "id": 1,
+        "velocity gain": 3,
+        "linear threshold": 3,
+        "angular threshold": 8,
+        "max ball distance": 12,
+        "max linear velocity": 50,
+        "max angular velocity": 20,
+        "kick velocity": 50,
+        "field line": {
+            "x": 16,
+            "min y": 50,
+            "max y": 80
+        }
+    },
+
+    "centerback": {
+        "id": 2,
+        "velocity gain": 3,
+        "linear threshold": 3,
+        "angular threshold": 8,
+        "max ball distance": 12,
+        "max linear velocity": 50,
+        "max angular velocity": 20,
+        "kick velocity": 127,
+        "field line": {
+            "x": 35,
+            "min y": 30,
+            "max y": 100
+        }
+    },
+
+    "striker": {
+        "id": 3,
+        "velocity gain": 3,
+        "linear threshold": 5,
+        "angular threshold": 8,
+        "max ball distance": 12,
+        "max linear velocity": 50,
+        "max angular velocity": 20,
+        "kick velocity": 127,
+        "field line": {
+            "x": 95,
+            "min y": 10,
+            "max y": 120
+        }
+    }
+}

@@ -1,0 +1,1 @@
+/usr/bin/c++   -pthread   CMakeFiles/testing.dir/src/main.cpp.o  -o testing libvss-testing-serial-srcs.a -lvss-core ../submodules/furgbol-core/dist/lib/libfurgbol-core-io.a -lserial 
