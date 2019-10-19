@@ -24,8 +24,8 @@ void GoalkeeperOperation::init() {
 
 void GoalkeeperOperation::run() {
     while (true) {
-        // verifyPosition();
-        // setTarget();
+        verifyPosition();
+        setTarget();
         setMotion();
         serialize();
     }

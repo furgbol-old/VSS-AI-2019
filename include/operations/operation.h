@@ -28,12 +28,20 @@ class Operation {
 
         communications::SerialRepository *serial_repo_;
 
-        int velocity_gain_;
+        int linear_velocity_gain_;
+        int angular_velocity_gain_;
+        int linear_discrepancy_factor;
+        int angular_discrepancy_factor;
+
         int linear_threshold_;
         int angular_threshold_;
+
         int max_linear_velocity_;
         int max_angular_velocity_;
+        int min_linear_velocity_;
+        int min_angular_velocity_;
         int kick_velocity_;
+
         float max_ball_distance_;
         geometry::FieldLine field_line_;
 
@@ -54,11 +62,16 @@ class Operation {
 
         bool canKick(float robot_x, float robot_y, float ball_x, float ball_y);
         bool outOfAngle(float robot_angle);
-        bool outOfTarget(float robot_x, float robot_y, float ball_x, float ball_y);
+        bool outOfTarget(float robot_x, float robot_y);
 
         void setKick(float robot_y, float ball_y);
         void fixesAngle(float robot_angle);
-        void goToTarget(float robot_x, float robot_y, float ball_x, float ball_y);
+        void goToTarget(float robot_x, float robot_y);
+        void stopRobot();
+
+        int calculateAngularVelocity(float robot_angle);
+        int calculateLinearVelocity(float robot_x, float robot_y);
+        int getQuadrant(float robot_angle);
 
     public:
         Operation();
