@@ -1,2 +1,2 @@
-# Testing VSS Serial Communication
-VSS serial communication testing module.
+# VSS AI
+VSS AI
