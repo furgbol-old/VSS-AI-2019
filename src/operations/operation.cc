@@ -26,18 +26,20 @@ void Operation::configure(std::string which_player) {
     nlohmann::json json_file;
     ifstream >> json_file;
 
-    linear_velocity_gain_ = json_file[which_player]["linear velocity gain"];
-    angular_velocity_gain_ = json_file[which_player]["angular velocity gain"];
-    linear_discrepancy_factor = json_file[which_player]["linear discrepancy factor"];
-    angular_discrepancy_factor = json_file[which_player]["angular discrepancy factor"];
-    linear_threshold_ = json_file[which_player]["linear threshold"];
-    angular_threshold_ = json_file[which_player]["angular threshold"];
-    max_ball_distance_ = json_file[which_player]["max ball distance"];
-    max_linear_velocity_ = json_file[which_player]["max linear velocity"];
-    max_angular_velocity_ = json_file[which_player]["max angular velocity"];
-    min_linear_velocity_ = json_file[which_player]["min linear velocity"];
-    min_angular_velocity_ = json_file[which_player]["min angular velocity"];
-    kick_velocity_ = json_file[which_player]["kick velocity"];
+    linear_velocity_gain_ = json_file[which_player]["movement settings"]["velocity control"]["linear velocity gain"];
+    angular_velocity_gain_ = json_file[which_player]["movement settings"]["velocity control"]["angular velocity gain"];
+    linear_discrepancy_factor = json_file[which_player]["movement settings"]["velocity control"]["linear discrepancy factor"];
+    angular_discrepancy_factor = json_file[which_player]["movement settings"]["velocity control"]["angular discrepancy factor"];
+
+    linear_threshold_ = json_file[which_player]["distance thresholds"]["linear threshold"];
+    angular_threshold_ = json_file[which_player]["distance thresholds"]["angular threshold"];
+    max_ball_distance_ = json_file[which_player]["distance thresholds"]["max ball distance"];
+
+    max_linear_velocity_ = json_file[which_player]["movement settings"]["velocity thresholds"]["max linear velocity"];
+    max_angular_velocity_ = json_file[which_player]["movement settings"]["velocity thresholds"]["max angular velocity"];
+    min_linear_velocity_ = json_file[which_player]["movement settings"]["velocity thresholds"]["min linear velocity"];
+    min_angular_velocity_ = json_file[which_player]["movement settings"]["velocity thresholds"]["min angular velocity"];
+    kick_velocity_ = json_file[which_player]["movement settings"]["velocity thresholds"]["kick velocity"];
 
     switch (side_) {
         case LEFT:

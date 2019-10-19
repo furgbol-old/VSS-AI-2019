@@ -28,21 +28,24 @@ class Operation {
 
         communications::SerialRepository *serial_repo_;
 
+        //Velocity control
         int linear_velocity_gain_;
         int angular_velocity_gain_;
         int linear_discrepancy_factor;
         int angular_discrepancy_factor;
 
+        //Distance thresholds
         int linear_threshold_;
         int angular_threshold_;
+        float max_ball_distance_;
 
+        //Velocity thresholds
         int max_linear_velocity_;
         int max_angular_velocity_;
         int min_linear_velocity_;
         int min_angular_velocity_;
         int kick_velocity_;
 
-        float max_ball_distance_;
         geometry::FieldLine field_line_;
 
         vss::Pose target_;
