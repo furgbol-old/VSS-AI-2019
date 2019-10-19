@@ -52,7 +52,7 @@ class Operation {
 
         virtual void configure(std::string which_player);
 
-        virtual void run() = 0;
+        void run();
         void end();
 
         void verifyPosition();

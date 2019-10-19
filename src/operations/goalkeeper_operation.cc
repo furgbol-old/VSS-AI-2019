@@ -22,15 +22,6 @@ void GoalkeeperOperation::init() {
     Operation::init();
 }
 
-void GoalkeeperOperation::run() {
-    while (true) {
-        verifyPosition();
-        setTarget();
-        setMotion();
-        serialize();
-    }
-}
-
 void GoalkeeperOperation::setTarget() {
     float robot_x, robot_y, ball_x, ball_y;
 

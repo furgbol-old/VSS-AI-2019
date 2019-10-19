@@ -15,8 +15,6 @@ namespace operations {
 
 class GoalkeeperOperation : public Operation {
     protected:
-        void run();
-
         void setTarget();
 
     public:

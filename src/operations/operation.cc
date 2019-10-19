@@ -54,6 +54,15 @@ void Operation::configure(std::string which_player) {
     robot_->id = json_file[which_player]["id"];
 }
 
+void Operation::run() {
+    while (true) {
+        verifyPosition();
+        setTarget();
+        setMotion();
+        serialize();
+    }
+}
+
 void Operation::end() {}
 
 void Operation::verifyPosition() {
