@@ -1,0 +1,6 @@
+[submodule "furgbol-core"]
+	path = furgbol-core
+	url = http://github.com/furgbol/furgbol-core
+[submodule "submodules/furgbol-core"]
+	path = submodules/furgbol-core
+	url = http://github.com/furgbol/furgbol-core

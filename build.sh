@@ -1,5 +1,5 @@
-rm -R build
-mkdir -p build
+#!/usr/bin/env sh
+
 cd build
 cmake ..
 make

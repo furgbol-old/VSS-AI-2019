@@ -1,3 +1,12 @@
 {
-    "team_color": "blue"
+    "environment": {
+        "team color": "blue",
+        "side": "left"
+    },
+
+    "players status": {
+        "goalkeeper": true,
+        "centerback": false,
+        "striker": false
+    }
 }

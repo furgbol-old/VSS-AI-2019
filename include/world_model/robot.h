@@ -5,6 +5,8 @@
 #define ROBOT_H
 
 
+#include "geometry/field_line.h"
+
 #include "Domain/Robot.h"
 
 
@@ -12,22 +14,20 @@ namespace vss_furgbol {
 namespace world_model {
 
 class Robot : public vss::Robot {
-    private:
-        int id_;
-
     public:
+        int id;
+        int linear_velocity;
+        int angular_velocity;
+        int linear_direction;
+        int angular_direction;
+
         Robot();
-        Robot(int id);
         ~Robot();
 
-        //getters
-        int getId();
-
-        //setters
-        void setId(int id);
-
-        //operators
         void operator=(Robot robot);
+        void operator=(vss::Robot robot);
+
+        friend std::ostream& operator<<(std::ostream& os, const Robot& robot);
 };
 
 } // namespace world_model
