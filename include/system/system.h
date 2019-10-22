@@ -5,14 +5,14 @@
 #define SYSTEM_H
 
 
-#include "labels/labels.h"
-#include "io/serial_sender.h"
-#include "io/tcp_receiver.h"
+#include "communications/receiver.h"
+#include "communications/serial_repository.h"
+#include "communications/sender.h"
+#include "operations/goalkeeper_operation.h"
 #include "world_model/world_model.h"
-#include "operation/gk_operation.h"
-#include "operation/cb_operation.h"
-#include "operation/st_operation.h"
 
+#include <memory>
+#include <mutex>
 #include <thread>
 
 
@@ -21,60 +21,43 @@ namespace system {
 
 class System {
     private:
-        int team_color_;
-        int execution_mode_;
-        bool configured_;
-
         world_model::WorldModel *world_model_;
+        communications::SerialRepository *serial_repo_;
 
-        operation::GKOperation *gk_operator_;
+        std::shared_ptr<communications::Receiver> receiver_;
+        std::thread receiver_thread_;
+
+        std::shared_ptr<communications::Sender> sender_;
+        std::thread sender_thread_;
+
+        std::shared_ptr<operations::GoalkeeperOperation> gk_operator_;
         std::thread gk_thread_;
-        std::mutex gk_mutex_;
-        bool gk_is_running_;
-        bool gk_is_paused_;
-        bool gk_status_changed_;
 
-        operation::CBOperation *cb_operator_;
-        std::thread cb_thread_;
-        std::mutex cb_mutex_;
-        bool cb_is_running_;
-        bool cb_status_changed_;
+        std::mutex mutex_;
 
-        operation::STOperation *st_operator_;
-        std::thread st_thread_;
-        std::mutex st_mutex_;
-        bool st_is_running_;
-        bool st_status_changed_;
+        int side_;
+        int team_color_;
 
-        io::TCPReceiver *tcp_receiver_;
-        std::thread tcp_thread_;
-        std::mutex tcp_mutex_;
-        bool tcp_is_running_;
-        bool tcp_is_paused_;
-        bool tcp_status_changed_;
-        
-        io::SerialSender *serial_sender_;
-        std::thread serial_thread_;
-        std::mutex serial_mutex_;
-        bool serial_is_running_;
-        bool serial_is_paused_;
-        bool serial_status_changed_;
+        void configure();
 
-        void exec();
+        void startSender();
+        void startGoalkeeperOperation();
+        void startReceiver();
+
+        world_model::Robot* getRobot(int which_player);
+
+        void run();
         void end();
 
-        void clearScreen();
-
     public:
-        System();
         System(world_model::WorldModel *world_model);
         ~System();
 
         void init();
 };
 
-}
-} // namespace furgbol
+} // namespace system
+} // namespace vss_furgbol
 
 
 #endif // SYSTEM_H

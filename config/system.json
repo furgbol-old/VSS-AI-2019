@@ -1,4 +1,12 @@
 {
-    "team_color": "blue",
-    "execution_mode": "real"
+    "environment": {
+        "team color": "yellow",
+        "side": "left"
+    },
+
+    "players status": {
+        "goalkeeper": true,
+        "centerback": false,
+        "striker": false
+    }
 }

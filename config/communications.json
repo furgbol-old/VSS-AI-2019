@@ -1,0 +1,10 @@
+{
+    "receiver": {
+        "max queue size": 5
+    },
+
+    "sender": {
+        "port name": "/dev/ttyACM0",
+        "package size": 5
+    }
+}

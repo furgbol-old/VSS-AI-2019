@@ -1,34 +1,36 @@
 cmake_minimum_required(VERSION 3.10)
-project(VSS-AI)
+project(vss-testing-serial)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") 
-
-find_package(Boost REQUIRED COMPONENTS system)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 include_directories("${CMAKE_SOURCE_DIR}/include"
                     "${CMAKE_SOURCE_DIR}/lib"
-                    ${Boost_INCLUDE_DIRS})
+                    "${CMAKE_SOURCE_DIR}/submodules/furgbol-core/dist/include")
 
-set(SRCS
-    "src/geometry/vector_2d.cc"
+set(SRCS 
+    "src/communications/receiver.cc"
+    "src/communications/sender.cc"
+    "src/communications/serial_repository.cc"
     "src/geometry/field_line.cc"
-    "src/io/serial_sender.cc"
-    "src/io/tcp_receiver.cc"
-    "src/operation/gk_operation.cc"
-    "src/operation/cb_operation.cc"
-    "src/operation/st_operation.cc"
+    "src/geometry/vector_2d.cc"
+    #"src/operations/centerback_operation.cc"
+    "src/operations/goalkeeper_operation.cc"
+    "src/operations/operation.cc"
+    #"src/operations/striker_operation.cc"
     "src/system/system.cc"
     "src/world_model/robot.cc"
     "src/world_model/world_model.cc")
 
-add_library(${PROJECT_NAME}_SRCS
-            ${SRCS})
+set(VSS_CORE libvss-core.so)
 
-set (VSS_CORE libvss-core.so)
+add_library(vss-testing-serial-srcs ${SRCS})
 
-add_executable(${PROJECT_NAME} "src/main.cpp")
+add_executable(testing "src/main.cpp")
 
-target_link_libraries(${PROJECT_NAME}
-                    ${PROJECT_NAME}_SRCS
-                    ${VSS_CORE}
-                    ${Boost_LIBRARIES})
+target_link_libraries(vss-testing-serial-srcs
+                        "${CMAKE_SOURCE_DIR}/submodules/furgbol-core/dist/lib/libfurgbol-core-io.a"
+                        serial)
+
+target_link_libraries(testing
+                        vss-testing-serial-srcs
+                        ${VSS_CORE})

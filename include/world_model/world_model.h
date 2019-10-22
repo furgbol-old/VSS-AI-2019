@@ -18,14 +18,16 @@ namespace world_model {
 class WorldModel {
     public:
         WorldModel();
-        WorldModel(vss::Ball ball, std::vector<std::vector<Robot>> robots);
         ~WorldModel();
 
-        vss::Ball ball_;
-        std::vector<std::vector<Robot>> robots_;
+        vss::Ball ball;
+        std::vector<Robot> team_blue;
+        std::vector<Robot> team_yellow;
+
+        friend std::ostream& operator<<(std::ostream& os, const WorldModel& world_model);
 };
 
-} // namespace worl_model
+} // namespace world_model
 } // namespace vss_furgbol
 
 

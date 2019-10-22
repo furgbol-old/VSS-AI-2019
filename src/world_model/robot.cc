@@ -7,18 +7,20 @@
 namespace vss_furgbol {
 namespace world_model {
 
-Robot::Robot() {}
-
-Robot::Robot(int id) : id_(id) {}
+Robot::Robot() {
+    id = 0;
+    x = 0;
+    y = 0;
+    angle = 0;
+    speedAngle = 0;
+    speedX = 0;
+    speedY = 0;
+}
 
 Robot::~Robot() {}
 
-int Robot::getId() { return id_; }
-
-void Robot::setId(int id) { id_ = id; }
-
 void Robot::operator=(Robot robot) {
-    id_ = robot.id_;
+    id = robot.id;
     x = robot.x;
     y = robot.y;
     angle = robot.angle;
@@ -34,6 +36,13 @@ void Robot::operator=(vss::Robot robot) {
     speedX = robot.speedX;
     speedY = robot.speedY;
     speedAngle = robot.speedAngle;
+}
+
+std::ostream& operator<<(std::ostream& os, const Robot& robot) {
+    std::cout << "Robot: " << std::endl;
+    std::cout << "\t" << "ID: " << robot.id << std::endl;
+    std::cout << "\t" << "Position: (" << robot.x << ", " << robot.y << ")" << std::endl;
+    std::cout << "\t" << "Angle: " << robot.angle << std::endl;
 }
 
 } // namespace world_model

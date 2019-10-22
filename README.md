@@ -1,1 +1,2 @@
-# VSS-AI
+# VSS AI
+VSS AI

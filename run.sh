@@ -1,1 +1,3 @@
-./build/VSS-AI
+#!/usr/bin/env sh
+
+./build/testing
