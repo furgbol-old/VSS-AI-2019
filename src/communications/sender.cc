@@ -48,7 +48,7 @@ void Sender::run() {
     while (true) {
         if (serial_repo_->getStatus(which_player_) == true) {
             buffer = serial_repo_->getPackage(which_player_);
-            if (buffer[LINEAR_VELOCITY] >= 0 || buffer[ANGULAR_VELOCITY] >= 0) serial_writer_->write(buffer);
+            if (buffer[LINEAR_VELOCITY] > 0 || buffer[ANGULAR_VELOCITY] > 0) serial_writer_->write(buffer);
         }
         //which_player_++;
         //if (which_player_ > ST) which_player_ = GK;

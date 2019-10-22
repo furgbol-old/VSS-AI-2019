@@ -4,7 +4,7 @@
     },
 
     "sender": {
-        "port name": "/dev/ttyUSB0",
+        "port name": "/dev/ttyACM0",
         "package size": 5
     }
 }

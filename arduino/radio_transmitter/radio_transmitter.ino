@@ -1,3 +1,5 @@
+// ® Copyright FURGBot 2019
+
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
@@ -31,6 +33,14 @@ void loop() {
     Serial.readBytes(serial_buffer, PACKAGE_SIZE);
     for (int i = 0; i < serial_available - PACKAGE_SIZE; ++i) dump = Serial.read();
     for (int i = 0; i < PACKAGE_SIZE; i++) radio_buffer[i] = serial_buffer[i];
+    radio.write(&radio_buffer, PACKAGE_SIZE);
+    Serial.write(ACK_MSG);
+  } else {
+    if (serial_available > 0) {
+      Serial.readBytes(serial_buffer, serial_available);
+      for (int i = 0; i < serial_available; ++i) dump = Serial.read();
+    }
+    for (int i = 0; i < PACKAGE_SIZE; i++) radio_buffer[i] = 0;
     radio.write(&radio_buffer, PACKAGE_SIZE);
     Serial.write(ACK_MSG);
   }

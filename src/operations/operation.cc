@@ -90,6 +90,8 @@ void Operation::setMotion() {
         robot_angle = robot_->angle;
         ball_x = ball_->x;
         ball_y = ball_->y; 
+        robot_->linear_direction = 0;
+        robot_->angular_direction = 0;
     }
 
     if (canKick(robot_x, robot_y, ball_x, ball_y)) setKick(robot_y, ball_y);
@@ -107,6 +109,14 @@ void Operation::serialize() {
     buffer[ANGULAR_VELOCITY] = (uint8_t)robot_->angular_velocity;
     buffer[LINEAR_DIRECTION] = (uint8_t)robot_->linear_direction;
     buffer[ANGULAR_DIRECTION] = (uint8_t)robot_->angular_direction;
+
+    std::cout << "Sended: {" << std::endl;
+    std::cout << "\tRobot ID: " << (int)buffer[ROBOT_ID] << std::endl;
+    std::cout << "\tLinear Velocity: " << (int)buffer[LINEAR_VELOCITY] << std::endl;
+    std::cout << "\tAngular Velocity: " << (int)buffer[ANGULAR_VELOCITY] << std::endl;
+    std::cout << "\tLinear Direction: " << (int)buffer[LINEAR_DIRECTION] << std::endl;
+    std::cout << "\tAngular Direction: " << (int)buffer[ANGULAR_DIRECTION] << std::endl;
+    std::cout << "}" << std::endl;
     
     if (serial_repo_->getStatus(GK) == true) serial_repo_->setPackage(GK, buffer);
 }
@@ -145,12 +155,12 @@ void Operation::setKick(float robot_y, float ball_y) {
     
     switch (side_) {
         case LEFT:
-            if (ball_y > robot_y) robot_->angular_direction = CLOCKWISE;
-            else robot_->angular_direction = COUNTERCLOCKWISE;
+            if (ball_y > robot_y) robot_->angular_direction = COUNTERCLOCKWISE;
+            else robot_->angular_direction = CLOCKWISE;
             break;
         case RIGHT:
-            if (ball_y < robot_y) robot_->angular_direction = CLOCKWISE;
-            else robot_->angular_direction = COUNTERCLOCKWISE;
+            if (ball_y < robot_y) robot_->angular_direction = COUNTERCLOCKWISE;
+            else robot_->angular_direction = CLOCKWISE;
             break;
     }
 }

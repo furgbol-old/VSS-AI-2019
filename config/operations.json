@@ -4,25 +4,25 @@
 
         "movement settings": {
             "velocity control": {
-                "linear velocity gain": 5,
+                "linear velocity gain": 10,
                 "angular velocity gain": 2,
                 "linear discrepancy factor": 2,
                 "angular discrepancy factor": 3
             },
 
             "velocity thresholds": {
-                "max linear velocity": 50,
-                "max angular velocity": 20,
-                "min linear velocity": 5,
-                "min angular velocity": 5,
-                "kick velocity": 50
+                "max linear velocity": 100,
+                "max angular velocity": 1,
+                "min linear velocity": 50,
+                "min angular velocity": 1,
+                "kick velocity": 120
             }
         },
 
         "distance thresholds": {
             "linear threshold": 3,
             "angular threshold": 8,
-            "max ball distance": 12
+            "max ball distance": 20
         },
 
         "field line": {
@@ -77,9 +77,9 @@
             },
 
             "velocity thresholds": {
-                "max linear velocity": 50,
+                "max linear velocity": 100,
                 "max angular velocity": 20,
-                "min linear velocity": 5,
+                "min linear velocity": 50,
                 "min angular velocity": 5,
                 "kick velocity": 50
             }
